@@ -59,7 +59,6 @@ def _fs_get(path: str, id_token: str = "") -> dict | None:
     Đọc 1 document từ Firestore bằng idToken.
     path = 'collection/doc_id'  (không có _FIRESTORE_BASE)
     """
-    import streamlit as st
     token = id_token or st.session_state.get("_id_token", "")
     url   = f"{_FIRESTORE_BASE}/{path}"
     try:
@@ -79,7 +78,7 @@ def _fs_get(path: str, id_token: str = "") -> dict | None:
 
 def _fs_set(collection: str, doc_id: str, data: dict, id_token: str):
     """Ghi / merge document vào Firestore bằng idToken."""
-    url = f"{_FIRESTORE_BASE}/{collection}/{doc_id}"
+    url  = f"{_FIRESTORE_BASE}/{collection}/{doc_id}"
     body = {"fields": _fs_encode(data)}
     try:
         requests.patch(
@@ -150,7 +149,7 @@ def register(email: str, password: str, display_name: str,
     id_token = data.get("idToken", "")
 
     if uid and id_token:
-        _fs_set(f"users/{uid}", {
+        _fs_set("users", uid, {
             "uid":               uid,
             "email":             email,
             "display_name":      display_name,
@@ -180,10 +179,9 @@ def login(email: str, password: str) -> tuple[bool, str, dict]:
         "grade":             "",
         "favorite_subjects": [],
         "role":              "student",
-        "_id_token":         id_token,           # lưu vào session_state để update_profile dùng sau
+        "_id_token":         id_token,
     }
 
-    # Lấy profile từ Firestore REST — timeout 8s, không crash nếu lỗi
     if uid and id_token:
         profile = _fs_get(f"users/{uid}", id_token)
         if profile:
@@ -212,7 +210,6 @@ def update_profile(uid: str, display_name: str = None,
                    grade: str = None,
                    favorite_subjects: list = None) -> bool:
     """Dùng idToken lưu trong session_state."""
-    import streamlit as st
     id_token = st.session_state.get("_id_token", "")
     if not uid or not id_token:
         return False
