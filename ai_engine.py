@@ -9,9 +9,10 @@ from config          import GROQ_API_URL, GROQ_HEADERS, GROQ_MODEL, NUM_QUESTION
 from question_bank   import QUESTION_BANK
 from history_manager import get_used_hashes, save_exam, filter_new_questions
 from teacher_manager import get_approved_for_exam
+from groq_queue      import call_groq_limited
 
 MAX_RETRIES = 2
-_MIN_QUESTIONS = 16   # số câu tối thiểu cho phép
+_MIN_QUESTIONS = 16
 
 
 # ── Bước 1: Gom pool ─────────────────────────────────────
@@ -32,9 +33,6 @@ def _build_pool(subject: str, grade: str) -> list:
 
 # ── Bước 2: Chọn câu, lọc trùng lịch sử ─────────────────
 def _pick_questions(subject: str, grade: str, n: int) -> list:
-    """
-    n : số câu cần lấy (đã được validate >= _MIN_QUESTIONS)
-    """
     pool = _build_pool(subject, grade)
     if not pool:
         return []
@@ -43,7 +41,6 @@ def _pick_questions(subject: str, grade: str, n: int) -> list:
     new_pool    = filter_new_questions(pool, used_hashes)
 
     if len(new_pool) < n:
-        # Hết câu mới → reset pool
         st.session_state["reset_pool"] = True
         chosen_pool = pool
     else:
@@ -172,15 +169,10 @@ def _shuffle_local(questions: list) -> list:
 # ── Entry point ───────────────────────────────────────────
 def generate_exam(subject: str, grade: str,
                   num_questions: int | None = None) -> tuple[list, str]:
-    """
-    num_questions : số câu muốn tạo. Nếu None → dùng NUM_QUESTIONS từ config.
-                    Luôn được clamp về [_MIN_QUESTIONS, 100].
-    """
     st.session_state["ai_error"]       = None
     st.session_state["verify_summary"] = None
     st.session_state["dup_filtered"]   = 0
 
-    # Xác định số câu — clamp an toàn
     n = int(num_questions) if num_questions is not None else NUM_QUESTIONS
     n = max(_MIN_QUESTIONS, min(100, n))
 
@@ -189,14 +181,19 @@ def generate_exam(subject: str, grade: str,
         st.session_state["ai_error"] = "Ngân hàng câu hỏi trống cho môn/lớp này."
         return [], "local"
 
-    # Lưu hash câu GỐC TRƯỚC khi Groq paraphrase
     _save_original_hashes(subject, grade, questions)
 
-    final, source = _shuffle_with_groq(questions)
+    # ── Gọi Groq qua queue (rate limit + cache) ──────────
+    final, source = call_groq_limited(_shuffle_with_groq, questions, timeout=40.0)
+
+    if source == "local" and not st.session_state.get("ai_error"):
+        st.session_state["ai_error"] = "⏳ Hệ thống đang bận — xáo đáp án local."
 
     pool      = _build_pool(subject, grade)
     used      = get_used_hashes(subject, grade)
     remaining = len(filter_new_questions(pool, used))
+
+    src_label = {"ai": "🤖 Groq AI", "cache": "⚡ Cache", "local": "📚 Local"}.get(source, source)
 
     if st.session_state.get("reset_pool"):
         st.session_state["verify_summary"] = (
@@ -205,7 +202,7 @@ def generate_exam(subject: str, grade: str,
     else:
         st.session_state["verify_summary"] = (
             f"✅ {len(final)} câu | Pool: {len(pool)} câu "
-            f"| Còn ~{remaining} câu chưa dùng"
+            f"| Còn ~{remaining} câu chưa dùng | {src_label}"
         )
     return final, source
 
