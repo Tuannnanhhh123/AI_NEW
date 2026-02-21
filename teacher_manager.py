@@ -1,14 +1,39 @@
 # ============================================================
 # teacher_manager.py — Quản lý câu hỏi giáo viên qua SQLite
 # ============================================================
-import sqlite3, json
+import sqlite3, json, time
 from datetime import datetime
 
 DB_FILE = "teacher_bank.db"
 
+
+# ── Kết nối SQLite với WAL mode + timeout ─────────────────
+def _conn():
+    """
+    WAL mode cho phép nhiều reader + 1 writer cùng lúc.
+    timeout=30 + busy_timeout=10000 để tránh lỗi 'database is locked'.
+    """
+    con = sqlite3.connect(DB_FILE, timeout=30, check_same_thread=False)
+    con.execute("PRAGMA journal_mode=WAL")
+    con.execute("PRAGMA synchronous=NORMAL")
+    con.execute("PRAGMA busy_timeout=10000")
+    return con
+
+
+def _conn_retry(max_retries: int = 3):
+    """Retry kết nối nếu DB bị lock (dùng cho WRITE quan trọng)."""
+    for attempt in range(max_retries):
+        try:
+            return _conn()
+        except sqlite3.OperationalError as e:
+            if "locked" in str(e) and attempt < max_retries - 1:
+                time.sleep(0.5 * (attempt + 1))
+                continue
+            raise
+
+
 # ── Khởi tạo DB ──────────────────────────────────────────
 def init_db():
-    """Tạo bảng nếu chưa có."""
     with _conn() as con:
         con.execute("""
             CREATE TABLE IF NOT EXISTS questions (
@@ -16,10 +41,10 @@ def init_db():
                 subject     TEXT    NOT NULL,
                 grade       TEXT    NOT NULL,
                 question    TEXT    NOT NULL,
-                options     TEXT    NOT NULL,  -- JSON array
+                options     TEXT    NOT NULL,
                 answer      TEXT    NOT NULL,
                 explanation TEXT    NOT NULL,
-                approved    INTEGER NOT NULL DEFAULT 0,  -- 0=pending, 1=approved
+                approved    INTEGER NOT NULL DEFAULT 0,
                 created_by  TEXT    NOT NULL DEFAULT 'teacher',
                 created_at  TEXT    NOT NULL
             )
@@ -30,13 +55,11 @@ def init_db():
                 name       TEXT NOT NULL,
                 subject    TEXT NOT NULL,
                 grade      TEXT NOT NULL,
-                q_ids      TEXT NOT NULL,  -- JSON array of question ids
+                q_ids      TEXT NOT NULL,
                 created_at TEXT NOT NULL
             )
         """)
 
-def _conn():
-    return sqlite3.connect(DB_FILE)
 
 def _row_to_q(row) -> dict:
     return {
@@ -57,8 +80,7 @@ def _row_to_q(row) -> dict:
 def add_question(subject: str, grade: str, question: str,
                  options: list, answer: str, explanation: str,
                  created_by: str = "teacher") -> int:
-    """Thêm câu hỏi mới (pending, chờ duyệt). Trả về id."""
-    with _conn() as con:
+    with _conn_retry() as con:
         cur = con.execute(
             """INSERT INTO questions
                (subject, grade, question, options, answer, explanation, approved, created_by, created_at)
@@ -71,8 +93,7 @@ def add_question(subject: str, grade: str, question: str,
 
 def update_question(q_id: int, question: str, options: list,
                     answer: str, explanation: str):
-    """Sửa câu hỏi theo id."""
-    with _conn() as con:
+    with _conn_retry() as con:
         con.execute(
             """UPDATE questions
                SET question=?, options=?, answer=?, explanation=?, approved=0
@@ -83,21 +104,18 @@ def update_question(q_id: int, question: str, options: list,
 
 
 def delete_question(q_id: int):
-    """Xóa câu hỏi theo id."""
-    with _conn() as con:
+    with _conn_retry() as con:
         con.execute("DELETE FROM questions WHERE id=?", (q_id,))
 
 
 def approve_question(q_id: int, approved: bool = True):
-    """Duyệt hoặc bỏ duyệt câu hỏi."""
-    with _conn() as con:
+    with _conn_retry() as con:
         con.execute("UPDATE questions SET approved=? WHERE id=?",
                     (1 if approved else 0, q_id))
 
 
 def approve_all(subject: str, grade: str):
-    """Duyệt tất cả câu hỏi của môn+lớp."""
-    with _conn() as con:
+    with _conn_retry() as con:
         con.execute(
             "UPDATE questions SET approved=1 WHERE subject=? AND grade=?",
             (subject, grade)
@@ -107,7 +125,6 @@ def approve_all(subject: str, grade: str):
 # ── Truy vấn câu hỏi ─────────────────────────────────────
 def get_questions(subject: str = None, grade: str = None,
                   approved_only: bool = False) -> list:
-    """Lấy danh sách câu hỏi, lọc theo môn/lớp/trạng thái."""
     sql    = "SELECT * FROM questions WHERE 1=1"
     params = []
     if subject:
@@ -123,16 +140,13 @@ def get_questions(subject: str = None, grade: str = None,
 
 
 def get_approved_for_exam(subject: str, grade: str) -> list:
-    """Lấy câu hỏi đã duyệt để đưa vào đề thi."""
     qs = get_questions(subject, grade, approved_only=True)
-    # Trả về định dạng chuẩn (bỏ các meta field)
     return [{"question": q["question"], "options": q["options"],
              "answer": q["answer"], "explanation": q["explanation"]}
             for q in qs]
 
 
 def get_stats() -> dict:
-    """Thống kê số câu theo môn+lớp+trạng thái."""
     with _conn() as con:
         rows = con.execute(
             """SELECT subject, grade,
@@ -148,7 +162,7 @@ def get_stats() -> dict:
 
 # ── Đề thi riêng của giáo viên ───────────────────────────
 def save_teacher_exam(name: str, subject: str, grade: str, q_ids: list) -> int:
-    with _conn() as con:
+    with _conn_retry() as con:
         cur = con.execute(
             "INSERT INTO teacher_exams (name,subject,grade,q_ids,created_at) VALUES (?,?,?,?,?)",
             (name, subject, grade, json.dumps(q_ids), _now())
@@ -166,12 +180,11 @@ def get_teacher_exams() -> list:
 
 
 def delete_teacher_exam(exam_id: int):
-    with _conn() as con:
+    with _conn_retry() as con:
         con.execute("DELETE FROM teacher_exams WHERE id=?", (exam_id,))
 
 
 def get_exam_questions(q_ids: list) -> list:
-    """Lấy câu hỏi theo danh sách id."""
     if not q_ids:
         return []
     placeholders = ",".join("?" * len(q_ids))
@@ -188,5 +201,4 @@ def _now() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M")
 
 
-# Tự động init khi import
 init_db()
