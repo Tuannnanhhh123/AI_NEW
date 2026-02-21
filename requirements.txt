@@ -1,5 +1,3 @@
 streamlit
-firebase-admin
-pandas
 requests
-groq
+python-dotenv
