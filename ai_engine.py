@@ -11,8 +11,16 @@ from history_manager import get_used_hashes, save_exam, filter_new_questions
 from teacher_manager import get_approved_for_exam
 from groq_queue      import call_groq_limited
 
-MAX_RETRIES = 2
+MAX_RETRIES    = 2
 _MIN_QUESTIONS = 16
+
+
+# ── Chuẩn hóa text để so sánh ────────────────────────────
+def _normalize(text: str) -> str:
+    """Bỏ khoảng trắng thừa + lowercase để tránh lệch encoding từ Groq."""
+    if not isinstance(text, str):
+        return ""
+    return " ".join(text.strip().lower().split())
 
 
 # ── Bước 1: Gom pool ─────────────────────────────────────
@@ -120,21 +128,38 @@ def _call_groq(messages: list) -> str | None:
 
 def _parse_questions(text: str, original: list) -> list | None:
     m = re.search(r'\[.*\]', text, re.DOTALL)
-    if not m: return None
+    if not m:
+        return None
     raw = re.sub(r"```json|```", "", m.group(0)).strip()
     try:
         data = json.loads(raw)
     except json.JSONDecodeError:
         return None
-    valid = [
-        q for q in data
-        if isinstance(q, dict)
-        and all(k in q for k in ("question","options","answer","explanation"))
-        and isinstance(q["options"], list)
-        and len(q["options"]) == 4
-        and q["answer"] in q["options"]
-        and len(q["question"].strip()) > 5
-    ]
+
+    valid = []
+    for q in data:
+        if not isinstance(q, dict):
+            continue
+        if not all(k in q for k in ("question", "options", "answer", "explanation")):
+            continue
+        if not isinstance(q["options"], list) or len(q["options"]) != 4:
+            continue
+        if len(q["question"].strip()) <= 5:
+            continue
+
+        # ── Khớp answer với options qua _normalize ───────
+        ans_norm = _normalize(q["answer"])
+        matched  = next(
+            (opt for opt in q["options"] if _normalize(opt) == ans_norm),
+            None
+        )
+        if matched is None:
+            # Groq trả answer không khớp option nào → bỏ câu
+            continue
+
+        # Gán lại answer = đúng text của option (tránh lệch khoảng trắng)
+        valid.append({**q, "answer": matched})
+
     return valid if len(valid) == len(original) else None
 
 
@@ -142,7 +167,8 @@ def _shuffle_with_groq(questions: list) -> tuple[list, str]:
     messages = _build_shuffle_prompt(questions)
     for attempt in range(1, MAX_RETRIES + 1):
         text = _call_groq(messages)
-        if text is None: break
+        if text is None:
+            break
         shuffled = _parse_questions(text, questions)
         if shuffled:
             st.session_state["ai_error"] = None
@@ -207,9 +233,14 @@ def generate_exam(subject: str, grade: str,
     return final, source
 
 
-# ── Chấm điểm ────────────────────────────────────────────
+# ── Chấm điểm (dùng _normalize để tránh lệch encoding) ───
 def grade_exam(questions: list, answers: dict) -> int:
-    return sum(
-        1 for i, q in enumerate(questions)
-        if answers.get(i) == q["answer"]
-    )
+    correct = 0
+    for i, q in enumerate(questions):
+        user_ans  = answers.get(i)
+        right_ans = q.get("answer", "")
+        if user_ans is None:
+            continue
+        if _normalize(user_ans) == _normalize(right_ans):
+            correct += 1
+    return correct
