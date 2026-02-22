@@ -1,8 +1,8 @@
 # ============================================================
 # teacher_pages.py — Giao diện dashboard giáo viên
-# Câu hỏi mới → ghi thẳng vào banks/{mon}_l{lop}.py
+# Tối ưu: cache bank file, cache DB queries, batch stats
 # ============================================================
-import os, ast, json
+import os, ast, json, sqlite3
 import streamlit as st
 from config          import SUBJECT_OPTIONS, GRADE_CONFIG
 from teacher_manager import (save_teacher_exam, get_teacher_exams,
@@ -12,23 +12,15 @@ from assignment_manager import (create_assignment, deactivate_assignment,
                                 delete_assignment, toggle_required,
                                 get_all_assignments, get_submission_stats)
 from user_manager import get_user_exams, get_user_stats, get_all_users
-import sqlite3
 
-# ── Map môn + lớp → đường dẫn file bank ──────────────────
 _MON_MAP = {
-    "Toán":      "toan",
-    "Ngữ Văn":   "van",
-    "Tiếng Anh": "anh",
-    "Vật Lý":    "ly",
-    "Hóa Học":   "hoa",
-    "Sinh Học":  "sinh",
+    "Toán":"toan","Ngữ Văn":"van","Tiếng Anh":"anh",
+    "Vật Lý":"ly","Hóa Học":"hoa","Sinh Học":"sinh",
 }
 _LOP_MAP = {
-    "Lớp 9 (THCS)":       "l9",
-    "Lớp 10 (THPT)":      "l10",
-    "Lớp 11 (THPT)":      "l11",
-    "Lớp 12 (THPT)":      "l12",
-    "Đại học / Nâng cao": "dh",
+    "Lớp 9 (THCS)":"l9","Lớp 10 (THPT)":"l10",
+    "Lớp 11 (THPT)":"l11","Lớp 12 (THPT)":"l12",
+    "Đại học / Nâng cao":"dh",
 }
 
 def _bank_path(subject: str, grade: str) -> str | None:
@@ -39,7 +31,8 @@ def _bank_path(subject: str, grade: str) -> str | None:
     return f"banks/{mon}_{lop}.py"
 
 
-# ── Đọc danh sách câu hỏi từ file bank ───────────────────
+# ── Cache đọc bank file (TTL 60s) ────────────────────────
+@st.cache_data(ttl=60, show_spinner=False)
 def _read_bank(fpath: str) -> list:
     if not os.path.exists(fpath):
         return []
@@ -57,7 +50,6 @@ def _read_bank(fpath: str) -> list:
     return []
 
 
-# ── Ghi danh sách câu hỏi ra file bank ───────────────────
 def _write_bank(fpath: str, questions: list) -> tuple[bool, str]:
     try:
         os.makedirs(os.path.dirname(fpath), exist_ok=True)
@@ -72,29 +64,61 @@ def _write_bank(fpath: str, questions: list) -> tuple[bool, str]:
         lines.append("]\n")
         with open(fpath, "w", encoding="utf-8") as f:
             f.writelines(lines)
+        # Xóa cache sau khi ghi để lần sau đọc lại
+        _read_bank.clear()
         return True, ""
     except Exception as e:
         return False, str(e)
 
 
-# ── Thêm 1 câu vào bank ───────────────────────────────────
 def _append_to_bank(subject: str, grade: str, new_q: dict) -> tuple[bool, str]:
     fpath = _bank_path(subject, grade)
     if not fpath:
         return False, f"Không tìm thấy file bank cho {subject} / {grade}"
-
     questions = _read_bank(fpath)
-
-    # Kiểm tra trùng
-    existing = {q["question"].strip().lower() for q in questions}
+    existing  = {q["question"].strip().lower() for q in questions}
     if new_q["question"].strip().lower() in existing:
         return False, "Câu hỏi này đã tồn tại trong ngân hàng!"
-
     questions.append(new_q)
     ok, err = _write_bank(fpath, questions)
     if ok:
         return True, f"✅ Đã lưu vào `{fpath}` — tổng {len(questions)} câu"
     return False, f"Lỗi ghi file: {err}"
+
+
+# ── Cache query DB (TTL 30s) ──────────────────────────────
+@st.cache_data(ttl=30, show_spinner=False)
+def _cached_all_assignments() -> list:
+    return get_all_assignments()
+
+@st.cache_data(ttl=30, show_spinner=False)
+def _cached_teacher_exams() -> list:
+    return get_teacher_exams()
+
+@st.cache_data(ttl=30, show_spinner=False)
+def _cached_all_users() -> list:
+    return get_all_users()
+
+@st.cache_data(ttl=30, show_spinner=False)
+def _cached_submission_stats(a_id: int) -> dict:
+    return get_submission_stats(a_id)
+
+@st.cache_data(ttl=30, show_spinner=False)
+def _cached_user_exams(uname: str) -> list:
+    return get_user_exams(uname)
+
+@st.cache_data(ttl=30, show_spinner=False)
+def _cached_user_stats(uname: str) -> dict:
+    return get_user_stats(uname)
+
+def _clear_caches():
+    """Gọi sau mỗi thao tác ghi để invalidate cache."""
+    _cached_all_assignments.clear()
+    _cached_teacher_exams.clear()
+    _cached_submission_stats.clear()
+    _cached_all_users.clear()
+    _cached_user_exams.clear()
+    _cached_user_stats.clear()
 
 
 # ── Entry point ───────────────────────────────────────────
@@ -112,7 +136,6 @@ def show_teacher_dashboard():
         "📢 Giao đề",
         "📊 Thống kê HS",
     ])
-
     with tab1: _tab_add()
     with tab2: _tab_manage()
     with tab3: _tab_custom_exam()
@@ -123,25 +146,19 @@ def show_teacher_dashboard():
 # ── Tab 1: Thêm câu hỏi ──────────────────────────────────
 def _tab_add():
     st.markdown("### ➕ Thêm câu hỏi vào ngân hàng")
-
     c1, c2 = st.columns(2)
-    with c1:
-        subject = st.selectbox("📚 Môn học", SUBJECT_OPTIONS, key="add_sub")
+    with c1: subject = st.selectbox("📚 Môn học", SUBJECT_OPTIONS, key="add_sub")
     with c2:
-        avail_grades = [g for g, cfg in GRADE_CONFIG.items()
-                        if subject in cfg["subjects"]]
+        avail_grades = [g for g, cfg in GRADE_CONFIG.items() if subject in cfg["subjects"]]
         grade = st.selectbox("🏫 Lớp", avail_grades, key="add_grade")
 
-    # Hiển thị số câu hiện có
     fpath = _bank_path(subject, grade)
     count = len(_read_bank(fpath)) if fpath else 0
     st.caption(f"📦 `{fpath}` — hiện có **{count} câu**")
-
     st.markdown("---")
 
     question = st.text_area("❓ Nội dung câu hỏi", height=100, key="add_q",
                              placeholder="Nhập câu hỏi tại đây...")
-
     st.markdown("**4 đáp án:**")
     c1, c2 = st.columns(2)
     with c1:
@@ -153,7 +170,6 @@ def _tab_add():
 
     options    = [opt_a, opt_b, opt_c, opt_d]
     valid_opts = [o for o in options if o.strip()]
-
     answer      = st.selectbox("✅ Đáp án đúng", valid_opts if valid_opts else ["—"], key="add_ans")
     explanation = st.text_area("💡 Giải thích", height=80, key="add_exp",
                                 placeholder="Giải thích tại sao đáp án đúng...")
@@ -165,7 +181,6 @@ def _tab_add():
         if len(set(options)) != 4:  errs.append("4 đáp án phải khác nhau")
         if answer not in options:   errs.append("Đáp án đúng phải là một trong 4 options")
         if not explanation.strip(): errs.append("Chưa nhập giải thích")
-
         if errs:
             for e in errs: st.error(e)
         else:
@@ -184,19 +199,16 @@ def _tab_add():
                 st.error(f"❌ {msg}")
 
 
-# ── Tab 2: Quản lý ngân hàng (sửa/xóa) ───────────────────
+# ── Tab 2: Quản lý ngân hàng ─────────────────────────────
 def _tab_manage():
     st.markdown("### 📝 Quản lý ngân hàng câu hỏi")
-
     c1, c2 = st.columns(2)
-    with c1:
-        subject = st.selectbox("📚 Môn", SUBJECT_OPTIONS, key="mgr_sub")
+    with c1: subject = st.selectbox("📚 Môn", SUBJECT_OPTIONS, key="mgr_sub")
     with c2:
-        avail_grades = [g for g, cfg in GRADE_CONFIG.items()
-                        if subject in cfg["subjects"]]
+        avail_grades = [g for g, cfg in GRADE_CONFIG.items() if subject in cfg["subjects"]]
         grade = st.selectbox("🏫 Lớp", avail_grades, key="mgr_grade")
 
-    fpath = _bank_path(subject, grade)
+    fpath     = _bank_path(subject, grade)
     questions = _read_bank(fpath) if fpath else []
 
     if not questions:
@@ -212,12 +224,10 @@ def _tab_manage():
             new_opts = []
             for j, opt in enumerate(q["options"]):
                 col = c1 if j < 2 else c2
-                new_opts.append(col.text_input(
-                    f"Đáp án {['A','B','C','D'][j]}", opt, key=f"eo_{i}_{j}"))
-            new_ans = st.selectbox(
-                "Đáp án đúng", new_opts,
-                index=new_opts.index(q["answer"]) if q["answer"] in new_opts else 0,
-                key=f"ea_{i}")
+                new_opts.append(col.text_input(f"Đáp án {['A','B','C','D'][j]}", opt, key=f"eo_{i}_{j}"))
+            new_ans = st.selectbox("Đáp án đúng", new_opts,
+                                    index=new_opts.index(q["answer"]) if q["answer"] in new_opts else 0,
+                                    key=f"ea_{i}")
             new_exp = st.text_area("Giải thích", q["explanation"], key=f"ee_{i}")
 
             ca, cb = st.columns(2)
@@ -247,15 +257,13 @@ def _tab_custom_exam():
     with st.expander("➕ Tạo đề thi mới", expanded=True):
         exam_name = st.text_input("Tên đề thi", placeholder="VD: Đề kiểm tra 15 phút Toán 12")
         c1, c2 = st.columns(2)
-        with c1:
-            ex_sub = st.selectbox("Môn", SUBJECT_OPTIONS, key="ex_sub")
+        with c1: ex_sub = st.selectbox("Môn", SUBJECT_OPTIONS, key="ex_sub")
         with c2:
-            avail = [g for g, cfg in GRADE_CONFIG.items() if ex_sub in cfg["subjects"]]
+            avail  = [g for g, cfg in GRADE_CONFIG.items() if ex_sub in cfg["subjects"]]
             ex_grade = st.selectbox("Lớp", avail, key="ex_grade")
 
-        # Đọc câu từ bank file
-        fpath    = _bank_path(ex_sub, ex_grade)
-        qs_pool  = _read_bank(fpath) if fpath else []
+        fpath   = _bank_path(ex_sub, ex_grade)
+        qs_pool = _read_bank(fpath) if fpath else []
 
         if not qs_pool:
             st.warning(f"File `{fpath}` chưa có câu hỏi nào.")
@@ -266,32 +274,30 @@ def _tab_custom_exam():
                 if st.checkbox(f"{q['question'][:80]}{'...' if len(q['question'])>80 else ''}",
                                key=f"sel_{i}"):
                     selected_qs.append(q)
-
             st.caption(f"Đã chọn: {len(selected_qs)} câu")
+
             if st.button("💾 Lưu đề thi", type="primary", use_container_width=True):
                 if not exam_name.strip():
                     st.error("Chưa nhập tên đề thi!")
                 elif not selected_qs:
                     st.error("Chưa chọn câu hỏi nào!")
                 else:
-                    # Lưu câu hỏi tạm vào DB để dùng cho assignment
-                    from teacher_manager import add_question, get_questions
+                    from teacher_manager import add_question, approve_question
                     ids = []
                     for q in selected_qs:
-                        qid = add_question(ex_sub, ex_grade,
-                                           q["question"], q["options"],
+                        qid = add_question(ex_sub, ex_grade, q["question"], q["options"],
                                            q["answer"], q["explanation"],
                                            created_by=st.session_state.username)
-                        # Auto approve ngay
-                        from teacher_manager import approve_question
                         approve_question(qid, True)
                         ids.append(qid)
                     save_teacher_exam(exam_name.strip(), ex_sub, ex_grade, ids)
+                    _clear_caches()
                     st.success("✅ Đã lưu đề thi!"); st.rerun()
 
     st.markdown("---")
     st.markdown("### 📚 Danh sách đề đã tạo")
-    exams = get_teacher_exams()
+    # Dùng cache thay vì gọi DB trực tiếp
+    exams = _cached_teacher_exams()
     if not exams:
         st.info("Chưa có đề thi nào."); return
 
@@ -309,6 +315,7 @@ def _tab_custom_exam():
                     st.markdown(f"&nbsp;&nbsp;{mark} {['A','B','C','D'][j]}. {opt}")
             if st.button("🗑️ Xóa đề này", key=f"delex_{ex['id']}", use_container_width=True):
                 delete_teacher_exam(ex["id"])
+                _clear_caches()
                 st.warning("Đã xóa!"); st.rerun()
 
 
@@ -319,12 +326,13 @@ def _tab_assign():
     with st.expander("➕ Giao đề mới", expanded=True):
         title = st.text_input("📌 Tiêu đề", placeholder="VD: Kiểm tra 15p Toán 12 — Tuần 3")
         c1, c2 = st.columns(2)
-        with c1: a_sub   = st.selectbox("📚 Môn", SUBJECT_OPTIONS,    key="as_sub")
+        with c1: a_sub = st.selectbox("📚 Môn", SUBJECT_OPTIONS, key="as_sub")
         with c2:
-            avail = [g for g, cfg in GRADE_CONFIG.items() if a_sub in cfg["subjects"]]
+            avail   = [g for g, cfg in GRADE_CONFIG.items() if a_sub in cfg["subjects"]]
             a_grade = st.selectbox("🏫 Lớp", avail, key="as_grade")
 
-        exams     = get_teacher_exams()
+        # Dùng cache
+        exams     = _cached_teacher_exams()
         exam_opts = {"🎲 Random từ ngân hàng": None}
         exam_opts.update({f"📋 {e['name']}": e["id"] for e in exams
                           if e["subject"] == a_sub and e["grade"] == a_grade})
@@ -341,32 +349,32 @@ def _tab_assign():
             else:
                 deadline = None
         with c2:
-            is_required = st.radio(
-                "⚠️ Mức độ",
-                ["🔴 Bắt buộc", "🟡 Nhắc nhở"],
-                key="as_req"
-            ) == "🔴 Bắt buộc"
+            is_required = st.radio("⚠️ Mức độ",
+                                    ["🔴 Bắt buộc", "🟡 Nhắc nhở"],
+                                    key="as_req") == "🔴 Bắt buộc"
 
         if st.button("📢 Giao đề ngay", type="primary", use_container_width=True):
             if not title.strip():
                 st.error("Chưa nhập tiêu đề!")
             else:
-                create_assignment(
-                    title=title.strip(), subject=a_sub, grade=a_grade,
-                    exam_id=exam_id, deadline=deadline,
-                    is_required=is_required,
-                    created_by=st.session_state.username
-                )
+                create_assignment(title=title.strip(), subject=a_sub, grade=a_grade,
+                                  exam_id=exam_id, deadline=deadline,
+                                  is_required=is_required,
+                                  created_by=st.session_state.username)
+                _clear_caches()
                 st.success(f"✅ Đã giao đề **{title}**!"); st.rerun()
 
     st.markdown("---")
     st.markdown("### 📋 Đề đã giao")
-    all_assigns = get_all_assignments()
+
+    # Dùng cache — không gọi DB mỗi lần render
+    all_assigns = _cached_all_assignments()
     if not all_assigns:
         st.info("Chưa có đề nào được giao."); return
 
     for a in all_assigns:
-        stats    = get_submission_stats(a["id"])
+        # Dùng cache stats theo assignment_id
+        stats    = _cached_submission_stats(a["id"])
         req_icon = "🔴" if a["is_required"] else "🟡"
         status   = "✅ Active" if a["is_active"] else "⛔ Ẩn"
         dl_str   = f"⏰ {a['deadline']}" if a["deadline"] else "Không hạn"
@@ -395,7 +403,8 @@ def _tab_assign():
             with ca:
                 lbl = "🟡 Nhắc nhở" if a["is_required"] else "🔴 Bắt buộc"
                 if st.button(lbl, key=f"tog_{a['id']}", use_container_width=True):
-                    toggle_required(a["id"], not a["is_required"]); st.rerun()
+                    toggle_required(a["id"], not a["is_required"])
+                    _clear_caches(); st.rerun()
             with cb:
                 lbl2 = "⛔ Ẩn" if a["is_active"] else "✅ Kích hoạt"
                 if st.button(lbl2, key=f"act_{a['id']}", use_container_width=True):
@@ -404,17 +413,18 @@ def _tab_assign():
                     else:
                         with sqlite3.connect("teacher_bank.db") as con:
                             con.execute("UPDATE assignments SET is_active=1 WHERE id=?", (a["id"],))
-                    st.rerun()
+                    _clear_caches(); st.rerun()
             with cc:
                 if st.button("🗑️ Xóa", key=f"delA_{a['id']}", use_container_width=True):
-                    delete_assignment(a["id"]); st.success("Đã xóa!"); st.rerun()
+                    delete_assignment(a["id"])
+                    _clear_caches()
+                    st.success("Đã xóa!"); st.rerun()
 
 
 # ── Tab 5: Thống kê học sinh ──────────────────────────────
 def _tab_stats():
     st.markdown("### 📊 Thống kê kết quả học sinh")
 
-    # Thống kê số câu trong từng bank file
     st.markdown("**📦 Ngân hàng câu hỏi (banks/*.py):**")
     bank_cols = st.columns(3)
     idx = 0
@@ -431,24 +441,27 @@ def _tab_stats():
 
     st.markdown("---")
 
-    users = get_all_users()
+    # Dùng cache
+    users = _cached_all_users()
     if not users:
         st.info("Chưa có học sinh nào làm bài."); return
 
     st.markdown("**👨‍🎓 Kết quả học sinh:**")
     c1, c2 = st.columns(2)
-    with c1: filter_sub  = st.selectbox("Lọc môn",  ["Tất cả"] + SUBJECT_OPTIONS, key="st_sub")
-    with c2: filter_user = st.selectbox("Lọc HS",   ["Tất cả"] + users,            key="st_usr")
+    with c1: filter_sub  = st.selectbox("Lọc môn", ["Tất cả"] + SUBJECT_OPTIONS, key="st_sub")
+    with c2: filter_user = st.selectbox("Lọc HS",  ["Tất cả"] + users,            key="st_usr")
 
     target_users = [filter_user] if filter_user != "Tất cả" else users
 
     for uname in target_users:
-        exams = get_user_exams(uname)
+        # Dùng cache thay vì gọi Firestore mỗi lần
+        exams = _cached_user_exams(uname)
         if filter_sub != "Tất cả":
             exams = [e for e in exams if e["subject"] == filter_sub]
-        if not exams: continue
+        if not exams:
+            continue
 
-        stats = get_user_stats(uname)
+        stats = _cached_user_stats(uname)
         with st.expander(f"👤 {uname} — {len(exams)} bài thi"):
             stat_cols = st.columns(min(len(stats), 3))
             for col, (subj, s) in zip(stat_cols, stats.items()):
