@@ -1,5 +1,5 @@
 # ============================================================
-# config.py — Cấu hình toàn cục, đọc từ .env
+# config.py — Cấu hình toàn cục, đọc từ .env (local) hoặc st.secrets (cloud)
 # ============================================================
 import os
 from dotenv import load_dotenv
@@ -7,8 +7,17 @@ from dotenv import load_dotenv
 # Đọc file .env (nếu chạy local)
 load_dotenv()
 
+import streamlit as st
+
+def _get(key: str, default: str = "") -> str:
+    """Đọc từ st.secrets (Streamlit Cloud) hoặc os.environ (local)."""
+    try:
+        return st.secrets[key]
+    except Exception:
+        return os.environ.get(key, default)
+
 # ── GROQ API ──────────────────────────────────────────────
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+GROQ_API_KEY = _get("GROQ_API_KEY")
 GROQ_MODEL   = "llama-3.3-70b-versatile"
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_HEADERS = {
@@ -18,14 +27,14 @@ GROQ_HEADERS = {
 
 if not GROQ_API_KEY:
     import warnings
-    warnings.warn("⚠️ GROQ_API_KEY chưa được cấu hình trong file .env!")
+    warnings.warn("⚠️ GROQ_API_KEY chưa được cấu hình!")
 
 # ── ĐỀ THI ────────────────────────────────────────────────
 NUM_QUESTIONS   = 10
 SUBJECT_OPTIONS = ["Toán", "Ngữ Văn", "Tiếng Anh", "Vật Lý", "Hóa Học", "Sinh Học"]
 
 # ── MÃ GIÁO VIÊN ─────────────────────────────────────────
-TEACHER_CODE = os.environ.get("TEACHER_CODE", "GV@2025")
+TEACHER_CODE = _get("TEACHER_CODE", "GV@2025")
 
 # ── CẤU HÌNH LỚP HỌC ─────────────────────────────────────
 GRADE_CONFIG = {
@@ -57,10 +66,10 @@ DIFFICULTY_MAP = {
 
 # ── FIREBASE CONFIG ───────────────────────────────────────
 FIREBASE_CONFIG = {
-    "apiKey":            os.environ.get("FB_API_KEY",        ""),
-    "authDomain":        os.environ.get("FB_AUTH_DOMAIN",    ""),
-    "projectId":         os.environ.get("FB_PROJECT_ID",     ""),
-    "storageBucket":     os.environ.get("FB_STORAGE_BUCKET", ""),
-    "messagingSenderId": os.environ.get("FB_MESSAGING_ID",   ""),
-    "appId":             os.environ.get("FB_APP_ID",         ""),
+    "apiKey":            _get("FB_API_KEY"),
+    "authDomain":        _get("FB_AUTH_DOMAIN"),
+    "projectId":         _get("FB_PROJECT_ID"),
+    "storageBucket":     _get("FB_STORAGE_BUCKET"),
+    "messagingSenderId": _get("FB_MESSAGING_ID"),
+    "appId":             _get("FB_APP_ID"),
 }
