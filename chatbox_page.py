@@ -351,7 +351,7 @@ def show_chatbox():
 
     # ── Cột trái: danh sách hội thoại ───────────────────
     with col_side:
-        st.markdown('<div class="conv-sidebar-label ,style="font-size:.78rem;color:#000">💬 Hội thoại</div>',
+        st.markdown('<div class="conv-sidebar-label ",style="font-size:.78rem;color:#000">💬 Hội thoại</div>',
                     unsafe_allow_html=True)
 
         if not convs:
