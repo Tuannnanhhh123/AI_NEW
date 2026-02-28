@@ -51,7 +51,7 @@ _CHAT_CSS = """
     overflow: hidden;
 }
 .conv-sidebar-label {
-    font-size: .68rem; font-weight: 700; color: #000;
+    font-size: .68rem; font-weight: 700; color: #94a3b8;
     letter-spacing: .08em; text-transform: uppercase;
     margin: .5rem 0 .4rem;
 }
