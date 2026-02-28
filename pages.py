@@ -662,19 +662,14 @@ def show_select():
                 st.session_state["sel_subject"] = subj; st.rerun()
 
     subject = st.session_state["sel_subject"]
-    st.markdown(
-        """
-        <div style="
-            color: #000000 !important;
-            -webkit-text-fill-color: #000000 !important;
-            font-weight: 700;
-            font-size: 18px;
-        ">
-            🏫 Chọn lớp / cấp độ
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    st.markdown("""
+        <style>
+        .sec-title {
+            color: #000 !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+    st.markdown('<div class="sec-title">🏫 Chọn lớp / cấp độ</div>', unsafe_allow_html=True)
     if "sel_grade" not in st.session_state:
         st.session_state["sel_grade"] = list(GRADE_CONFIG.keys())[0]
 
