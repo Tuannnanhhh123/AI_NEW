@@ -665,10 +665,11 @@ def show_select():
     st.markdown(
         """
         <div style="
-            color:#000 !important;
-            font-weight:600;
-            font-size:1.1rem;
-            margin-bottom:.3rem;">
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+            font-weight: 700;
+            font-size: 18px;
+        ">
             🏫 Chọn lớp / cấp độ
         </div>
         """,
