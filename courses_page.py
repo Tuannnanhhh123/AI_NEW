@@ -206,7 +206,7 @@ def _show_course_list(uid: str):
         tot  = count_total_lessons(c)
         done = len(prog.get("completed_lessons", []))
         lvl  = c.get("level", "Cơ bản")
-        lc   = _LEVEL_COLOR.get(lvl, ("#e8f0fe","#1a73e8"))
+        lc   = _LEVEL_COLOR.get(lvl, ("#000","#000"))
         icon = _SUBJ_ICONS.get(c.get("subject",""), "📚")
 
         st.markdown(f"""
