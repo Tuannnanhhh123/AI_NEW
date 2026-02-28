@@ -616,6 +616,14 @@ def show_home():
         st.markdown('<div class="stat-grid">', unsafe_allow_html=True)
         for subj, s in stats.items():
             color = "#1e8e3e" if s["avg"]>=80 else ("#f4a300" if s["avg"]>=60 else "#d93025")
+            st.markdown("""
+                <style>
+                .stat-card-sub {
+                    color: #000 !important;
+                    style="font-size:18px;"
+                }
+                </style>
+                """, unsafe_allow_html=True)
             st.markdown(f"""
             <div class="stat-card">
                 <div class="stat-card-val" style="color:{color}">{s['avg']}%</div>
