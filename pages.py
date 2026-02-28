@@ -999,7 +999,12 @@ def show_results():
                     unsafe_allow_html=True
                 )
 
-            exp = "<br>".join(q["explanation"].values())
+            explanation = q.get("explanation", "")
+
+            if isinstance(explanation, dict):
+                exp = "<br>".join(explanation.values())
+            else:
+                exp = str(explanation)
 
             st.markdown(
                 f'''
