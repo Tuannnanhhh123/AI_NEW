@@ -968,7 +968,12 @@ def show_results():
                     f'✅ Đáp án đúng: {c}</div>',
                     unsafe_allow_html=True)
 
-            exp = "<br>".join(q["explanation"].values())
+            exp_raw = q.get("explanation", "")
+
+            if isinstance(exp_raw, dict):
+                exp = "<br>".join(str(v) for v in exp_raw.values())
+            else:
+                exp = str(exp_raw)
             st.markdown(
                 f'''<div style="margin-top:.4rem;font-size:.78rem;background:#f0fdf4;
                     padding:.4rem .6rem;border-radius:6px;color:#000;">
