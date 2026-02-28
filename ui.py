@@ -172,6 +172,35 @@ CSS = """
     from { transform: translateX(100%); opacity: 0; }
     to   { transform: translateX(0);    opacity: 1; }
 }
+/* ── Sidebar stats card ── */
+.stats-card {
+    background: #fff;
+    border-left: 4px solid #1a73e8;
+    border-radius: 8px;
+    padding: .65rem .85rem;
+    box-shadow: 0 1px 6px rgba(26,115,232,.1);
+    margin-bottom: .6rem;
+}
+.stats-card-title {
+    font-weight: 700;
+    font-size: .82rem;
+    color: #1a73e8;
+    margin-bottom: .35rem;
+}
+.stats-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .25rem 0;
+    font-size: .78rem;
+    color: #444;
+    border-bottom: 1px solid #f0f4ff;
+}
+.stats-card-row:last-child { border-bottom: none; }
+.stats-card-count {
+    font-weight: 700;
+    color: #1a73e8;
+}
 </style>
 """
 
@@ -406,14 +435,25 @@ def render_sidebar():
         st.markdown("---")
 
         # Thống kê câu hỏi đã dùng
+       # Thống kê câu hỏi đã dùng
         try:
             from history_manager import get_history_stats, clear_history
             stats = get_history_stats()
             if stats:
-                st.markdown("**📊 Câu hỏi đã dùng:**")
-                for key, count in stats.items():
-                    subj, g = key.split("|")
-                    st.caption(f"• {subj} / {g.split('(')[0].strip()}: {count} câu")
+                rows_html = "".join(
+                    f'<div class="stats-card-row">'
+                    f'<span>📖 {key.split("|")[0]} / {key.split("|")[1].split("(")[0].strip()}</span>'
+                    f'<span class="stats-card-count">{count} câu</span>'
+                    f'</div>'
+                    for key, count in stats.items()
+                )
+                st.markdown(
+                    f'<div class="stats-card">'
+                    f'<div class="stats-card-title">📊 Câu hỏi đã dùng</div>'
+                    f'{rows_html}'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
                 if st.button("🗑️ Xóa lịch sử câu hỏi", use_container_width=True):
                     clear_history(); st.success("Đã xóa!"); st.rerun()
                 st.markdown("---")
@@ -444,3 +484,4 @@ def render_all_ui():
     
 
     
+
