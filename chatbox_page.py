@@ -445,3 +445,5 @@ def show_chatbox():
                 st.session_state.page = "home"; st.rerun()
         with n2:
             if st.button("🚀 Làm bài ngay", use_container_width=True,
+                         type="primary", key="chat_exam"):
+                st.session_state.page = "select"; st.rerun()
