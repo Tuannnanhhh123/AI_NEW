@@ -9,6 +9,7 @@ load_dotenv()
 
 import streamlit as st
 
+
 def _get(key: str, default: str = "") -> str:
     """Đọc từ st.secrets (Streamlit Cloud) hoặc os.environ (local)."""
     try:
@@ -16,18 +17,33 @@ def _get(key: str, default: str = "") -> str:
     except Exception:
         return os.environ.get(key, default)
 
+
 # ── GROQ API ──────────────────────────────────────────────
 GROQ_API_KEY = _get("GROQ_API_KEY")
 GROQ_MODEL   = "llama-3.3-70b-versatile"
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_HEADERS = {
-    "Authorization": f"Bearer {GROQ_API_KEY}",
-    "Content-Type":  "application/json",
-}
+
+# ⚠️ KHÔNG dùng GROQ_HEADERS trực tiếp nữa — dùng get_groq_headers() để đảm bảo
+# key luôn được đọc mới nhất lúc gọi (tránh lỗi 401 do key rỗng lúc import)
+def get_groq_headers() -> dict:
+    """Trả về headers với API key được đọc mới nhất."""
+    api_key = _get("GROQ_API_KEY")
+    if not api_key:
+        import warnings
+        warnings.warn("⚠️ GROQ_API_KEY chưa được cấu hình — sẽ bị lỗi 401!")
+    return {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type":  "application/json",
+    }
+
+# Giữ lại GROQ_HEADERS để tương thích ngược với các file khác,
+# nhưng khuyến nghị dùng get_groq_headers() thay thế.
+GROQ_HEADERS = get_groq_headers()
 
 if not GROQ_API_KEY:
     import warnings
     warnings.warn("⚠️ GROQ_API_KEY chưa được cấu hình!")
+
 
 # ── ĐỀ THI ────────────────────────────────────────────────
 NUM_QUESTIONS   = 10
