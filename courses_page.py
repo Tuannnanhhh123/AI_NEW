@@ -206,7 +206,7 @@ def _show_course_list(uid: str):
         tot  = count_total_lessons(c)
         done = len(prog.get("completed_lessons", []))
         lvl  = c.get("level", "Cơ bản")
-        lc   = _LEVEL_COLOR.get(lvl, ("#000","#000"))
+        lc   = _LEVEL_COLOR.get(lvl, ("#e8f0fe","##1a73e8"))
         icon = _SUBJ_ICONS.get(c.get("subject",""), "📚")
 
         st.markdown(f"""
@@ -216,9 +216,9 @@ def _show_course_list(uid: str):
             <div class="cc-info">
               <div class="cc-title">{c["title"]}</div>
               <div class="cc-meta">
-                <span>👨‍🏫 {c.get("teacher","")}</span>
-                <span>📖 {tot} bài học</span>
-                <span>🏫 {c.get("grade","")}</span>
+                <span style="color:#000;">👨‍🏫 {c.get("teacher","")}</span>
+                <span style="color:#000;">📖 {tot} bài học</span>
+                <span style="color:#000;">🏫 {c.get("grade","")}</span>
               </div>
             </div>
           </div>
