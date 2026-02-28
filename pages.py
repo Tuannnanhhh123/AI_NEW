@@ -706,10 +706,31 @@ def show_select():
     # Nhập thủ công
     st.markdown("""
     <style>
-    /* Hoặc nhập số câu tuỳ ý: */
+
+    /* Hoặc nhập số câu tuỳ ý:*/
     div[data-baseweb="input"] input {
         color: #000 !important;
-    }</style>""",unsafe_allow_html=True)
+    }
+
+    /* nền ô nhập */
+    div[data-baseweb="input"] > div {
+        background-color: #ffffff !important;
+    }
+
+    /* viền ô nhập */
+    div[data-baseweb="input"] > div {
+        border: 1px solid #4338ca !important;
+        border-radius: 8px;
+    }
+
+    /* label */
+    label {
+        color: #000 !important;
+        font-weight: 600;
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
     custom = st.number_input(
         "Hoặc nhập số câu tuỳ ý:",
         min_value=_MIN_Q, max_value=_MAX_Q,
