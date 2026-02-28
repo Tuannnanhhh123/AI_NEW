@@ -216,13 +216,13 @@ def _show_course_list(uid: str):
             <div class="cc-info">
               <div class="cc-title">{c["title"]}</div>
               <div class="cc-meta">
-                <span style="color:#000;">👨‍🏫 {c.get("teacher","")}</span>
-                <span style="color:#000;">📖 {tot} bài học</span>
-                <span style="color:#000;">🏫 {c.get("grade","")}</span>
+                <span style="color:#000;!important">👨‍🏫 {c.get("teacher","")}</span>
+                <span style="color:#000; important" >📖 {tot} bài học</span>
+                <span style="color:#000; !important">🏫 {c.get("grade","")}</span>
               </div>
             </div>
           </div>
-          <div class="cc-desc">{c.get("description","")}</div>
+          <div class="cc-desc" style="color:#000;!important">{c.get("description","")}</div>
           <div class="cc-tags">
             <span class="cc-tag" style="background:{lc[0]};color:{lc[1]}">{lvl}</span>
             <span class="cc-tag" style="background:#e8f0fe;color:#1a73e8">{c.get("subject","")}</span>
