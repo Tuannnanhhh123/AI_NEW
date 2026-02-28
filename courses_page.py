@@ -93,9 +93,9 @@ _CSS = """
 .quiz-wrap {
     background:linear-gradient(135deg,#f0f4ff,#faf5ff);
     border:1px solid #e0e7ff; border-radius:14px;
-    padding:1rem 1.2rem; margin-top:1rem;
+    padding:1rem 1.4rem; margin-top:1.2rem;
 }
-.quiz-title { font-size:.85rem; font-weight:800; color:#4338ca; margin-bottom:.75rem; }
+.quiz-title { font-size:.95rem; font-weight:815; color:#4338ca; margin-bottom:.75rem; }
 
 /* Certificate */
 .cert-card {
