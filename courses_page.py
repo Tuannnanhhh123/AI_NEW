@@ -229,7 +229,7 @@ def _show_course_list(uid: str):
             {"<span class='cc-tag' style='background:#f0fdf4;color:#166534'>✅ Hoàn thành</span>" if pct==100 else ""}
           </div>
           <div class="cc-prog">
-            <div style="font-size:.72rem;color:#888">Tiến độ: {done}/{tot} bài ({pct}%)</div>
+            <div style="font-size:.72rem;color:#000">Tiến độ: {done}/{tot} bài ({pct}%)</div>
             <div class="prog-bar"><div class="prog-fill" style="width:{pct}%"></div></div>
           </div>
         </div>
