@@ -604,6 +604,14 @@ def show_home():
                     st.session_state.page = "urgent_exam"; st.rerun()
 
     if stats:
+        st.markdown("""
+            <style>
+            .sec-title {
+                color: #000 !important;
+                style="font-size:18px;"
+            }
+            </style>
+            """, unsafe_allow_html=True)
         st.markdown('<div class="sec-title">📊 Kết quả của bạn</div>', unsafe_allow_html=True)
         st.markdown('<div class="stat-grid">', unsafe_allow_html=True)
         for subj, s in stats.items():
