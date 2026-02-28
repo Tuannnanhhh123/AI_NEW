@@ -353,7 +353,15 @@ def _show_course_detail(uid: str, uname: str):
             cls   = "done" if is_done else ("locked" if is_locked else "")
             mins  = ls.get("duration_min", 0)
             quiz  = ls.get("quiz", [])
-
+            st.markdown("""
+            <style>
+            .li-meta {
+                color: #000 !important;
+                font-weight: 600;
+                font-size: 1rem;
+            }
+            </style>
+            """, unsafe_allow_html=True)
             st.markdown(f"""
             <div class="lesson-item {cls}">
               <span class="li-icon">{icon}</span>
