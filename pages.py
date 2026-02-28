@@ -991,17 +991,29 @@ def show_results():
                 st.markdown(
                     f'<div class="res-ans" style="color:{color};font-weight:600">'
                     f'Bạn chọn: {u}</div>', unsafe_allow_html=True)
+            
             if not ok:
                 st.markdown(
-                    f'<div class="res-ans" style="color:#1e8e3e;font-weight:600">'
-                    f'✅ Đáp án đúng: {c}</div>', unsafe_allow_html=True)
+                    f'<div style="color:#1e8e3e;font-weight:600">'
+                    f'✅ Đáp án đúng: {c}</div>',
+                    unsafe_allow_html=True
+                )
+
+            exp = "<br>".join(q["explanation"].values())
+
             st.markdown(
-                f'<div style="margin-top:.4rem;font-size:.78rem;color:#555;'
-                f'background:#f0fdf4;padding:.4rem .6rem;border-radius:6px">'
-                f'💡 {q["explanation"]}</div>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-            st.markdown(
-                f'<div class="explanation-box"><span style="color:#000;">💡 {exp}</span></div>',
+                f'''
+                <div style="
+                    margin-top:.4rem;
+                    font-size:.78rem;
+                    background:#f0fdf4;
+                    padding:.4rem .6rem;
+                    border-radius:6px;
+                    color:#000;
+                ">
+                    💡 {exp}
+                </div>
+                ''',
                 unsafe_allow_html=True
             )
     st.markdown("---")
