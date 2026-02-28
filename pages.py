@@ -665,7 +665,7 @@ def show_select():
     st.markdown("""
         <style>
         .sec-title {
-            style="font-size:18px;"
+            
             color: #000 !important;
         }
         </style>
