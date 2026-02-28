@@ -83,8 +83,6 @@ _PAGE_CSS = """
     align-items: center; justify-content: center;
     padding: .5rem;
 }
-
-/* Vòng tròn SVG countdown */
 .timer-svg-wrap {
     position: relative;
     width: 90px; height: 90px;
@@ -98,7 +96,6 @@ _PAGE_CSS = """
     stroke-linecap: round;
     transition: stroke-dashoffset .9s linear, stroke .5s ease;
 }
-/* Text ở giữa vòng tròn */
 .timer-center {
     position: absolute; inset: 0;
     display: flex; flex-direction: column;
@@ -115,18 +112,14 @@ _PAGE_CSS = """
     letter-spacing: .04em; text-transform: uppercase;
     opacity: .65;
 }
-
-/* Màu theo trạng thái */
 .t-green .timer-track    { stroke: #d1fae5; }
 .t-green .timer-progress { stroke: #10b981; }
 .t-green .timer-digits   { color: #065f46; }
 .t-green .timer-label    { color: #065f46; }
-
 .t-yellow .timer-track    { stroke: #fef3c7; }
 .t-yellow .timer-progress { stroke: #f59e0b; }
 .t-yellow .timer-digits   { color: #92400e; }
 .t-yellow .timer-label    { color: #92400e; }
-
 .t-red .timer-track    { stroke: #fee2e2; }
 .t-red .timer-progress { stroke: #ef4444; }
 .t-red .timer-digits   { color: #991b1b; }
@@ -137,8 +130,6 @@ _PAGE_CSS = """
     25%    { transform:translateX(-2px) }
     75%    { transform:translateX(2px) }
 }
-
-/* Card wrapper bọc timer */
 .timer-card {
     border-radius: 14px; padding: .6rem .8rem;
     text-align: center; border: 2px solid;
@@ -155,8 +146,6 @@ _PAGE_CSS = """
     0%,100%{ box-shadow:0 0 12px rgba(239,68,68,.25); }
     50%    { box-shadow:0 0 24px rgba(239,68,68,.5); }
 }
-
-/* ── Cảnh báo toast gần hết giờ ── */
 .timer-toast {
     display: flex; align-items: center; gap: .6rem;
     border-radius: 10px; padding: .6rem 1rem;
@@ -175,8 +164,6 @@ _PAGE_CSS = """
 }
 @keyframes toast-in    { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:none} }
 @keyframes toast-pulse { 0%,100%{opacity:1} 50%{opacity:.75} }
-
-/* Auto-submit countdown bar */
 .auto-bar-wrap {
     height: 4px; border-radius: 2px;
     background: #fee2e2; margin-top: .4rem; overflow: hidden;
@@ -291,17 +278,33 @@ _PAGE_CSS = """
 .hist-pct   { font-size:1.1rem; font-weight:800; }
 .hist-pts   { font-size:.7rem; color:#888; }
 
-/* ── Grade select card ── */
+/* ════════════════════════════════════
+   GRADE CARD — xanh đậm hơn
+════════════════════════════════════ */
 .grade-card {
-    background:white; border-radius:12px;
-    padding:1.2rem; border:2px solid #e0e7ff;
-    cursor:pointer; transition:all .2s; text-align:center;
+    background: white;
+    border-radius: 12px;
+    padding: 1.2rem;
+    border: 2px solid #c5d8fc;
+    cursor: pointer;
+    transition: all .2s;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(21,87,176,.08);
 }
-.grade-card:hover  { border-color:#1a73e8; transform:translateY(-2px); box-shadow:0 4px 16px rgba(26,115,232,.12); }
-.grade-card.active { border-color:#1a73e8; background:#f0f4ff; }
+.grade-card:hover {
+    border-color: #1557b0;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(21,87,176,.18);
+    background: #eef3fd;
+}
+.grade-card.active {
+    border-color: #0d47a1;
+    background: linear-gradient(135deg, #e8f0fe, #dbeafe);
+    box-shadow: 0 4px 16px rgba(13,71,161,.2);
+}
 .grade-emoji { font-size:2rem; margin-bottom:.4rem; }
-.grade-name  { font-size:.82rem; font-weight:700; color:#1a1a2e; }
-.grade-desc  { font-size:.7rem; color:#888; margin-top:.2rem; }
+.grade-name  { font-size:.82rem; font-weight:700; color:#0d47a1; }
+.grade-desc  { font-size:.7rem; color:#1557b0; margin-top:.2rem; font-weight:600; }
 
 /* ── Section title ── */
 .sec-title {
@@ -317,27 +320,67 @@ _PAGE_CSS = """
     padding:.75rem 1rem; margin-bottom:.75rem;
     font-size:.85rem;
 }
+
+/* ════════════════════════════════════
+   BUTTONS chọn môn + Tạo đề + Quay lại — xanh đậm
+════════════════════════════════════ */
+
+/* Nút primary (active môn, Tạo đề thi) */
+div[data-testid="stButton"] > button[kind="primary"] {
+    background: linear-gradient(135deg, #1557b0, #0d47a1) !important;
+    border: none !important;
+    color: white !important;
+    font-weight: 700 !important;
+    box-shadow: 0 3px 10px rgba(13,71,161,.3) !important;
+    transition: all .2s !important;
+}
+div[data-testid="stButton"] > button[kind="primary"]:hover {
+    background: linear-gradient(135deg, #0d47a1, #0a3880) !important;
+    box-shadow: 0 5px 16px rgba(13,71,161,.4) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Nút secondary (môn chưa chọn, Quay lại) */
+div[data-testid="stButton"] > button[kind="secondary"] {
+    background: white !important;
+    border: 2px solid #1557b0 !important;
+    color: #1557b0 !important;
+    font-weight: 600 !important;
+    transition: all .2s !important;
+}
+div[data-testid="stButton"] > button[kind="secondary"]:hover {
+    background: #eef3fd !important;
+    border-color: #0d47a1 !important;
+    color: #0d47a1 !important;
+}
+
+/* Ô tóm tắt đề thi */
+.exam-summary {
+    background: linear-gradient(135deg, #eef3fd, #dbeafe);
+    border: 1px solid #93c5fd;
+    border-left: 4px solid #1557b0;
+    border-radius: 10px;
+    padding: .75rem 1rem;
+    margin: .75rem 0;
+    font-size: .85rem;
+    color: #1e3a5f;
+    font-weight: 500;
+}
 </style>
 """
 
 # ── Ngưỡng cảnh báo (giây) ───────────────────────────────
-_WARN_YELLOW = 300   # 5 phút — chuyển vàng
-_WARN_RED    = 120   # 2 phút — chuyển đỏ
-_WARN_DANGER =  60   # 1 phút — hiện toast nguy hiểm
+_WARN_YELLOW = 300
+_WARN_RED    = 120
+_WARN_DANGER =  60
 
 
 def _render_timer(remaining: int, total_dur: int) -> str:
-    """
-    Timer chạy hoàn toàn bằng JavaScript — không rerun Python.
-    remaining : giây còn lại (tính từ server)
-    total_dur : tổng giây của đề
-    """
     r    = 36
-    circ = 2 * 3.14159265 * r  # 226.19...
+    circ = 2 * 3.14159265 * r
 
     return f"""
 <div id="timer-root">
-  <!-- Card bọc timer — JS sẽ cập nhật class -->
   <div class="timer-card t-green" id="tcrd">
     <div class="timer-outer">
       <div class="timer-svg-wrap">
@@ -355,8 +398,6 @@ def _render_timer(remaining: int, total_dur: int) -> str:
       </div>
     </div>
   </div>
-
-  <!-- Toast cảnh báo — ẩn mặc định -->
   <div id="ttoast" style="display:none;margin-top:.5rem;
        padding:.55rem .9rem; border-radius:10px; font-size:.8rem;
        font-weight:600; font-family:Inter,sans-serif;"></div>
@@ -432,7 +473,6 @@ def _render_timer(remaining: int, total_dur: int) -> str:
   var label  = document.getElementById('tlabel');
   var toast  = document.getElementById('ttoast');
 
-  /* Tìm nút "Nộp bài" của Streamlit để click tự động */
   function findSubmitBtn() {{
     var btns = window.parent.document.querySelectorAll('button[kind="primary"]');
     for (var i = 0; i < btns.length; i++) {{
@@ -450,16 +490,10 @@ def _render_timer(remaining: int, total_dur: int) -> str:
     var s = rem % 60;
     var mm = (m < 10 ? '0' : '') + m;
     var ss = (s < 10 ? '0' : '') + s;
-
-    /* ── Cập nhật chữ số ── */
     digits.textContent = mm + ':' + ss;
-
-    /* ── Vòng tròn progress ── */
     var pct    = TOTAL > 0 ? rem / TOTAL : 0;
     var offset = CIRC * (1 - pct);
     prog.setAttribute('stroke-dashoffset', offset.toFixed(1));
-
-    /* ── Đổi màu theo ngưỡng ── */
     if (rem <= WARN_R) {{
       card.className   = 'timer-card t-red';
       track.setAttribute('stroke','#fee2e2');
@@ -479,8 +513,6 @@ def _render_timer(remaining: int, total_dur: int) -> str:
       digits.style.color = '#065f46';
       label.style.color  = '#065f46';
     }}
-
-    /* ── Toast cảnh báo ── */
     if (rem <= 0) {{
       toast.style.display = 'flex';
       toast.className = 'timer-toast danger';
@@ -506,24 +538,17 @@ def _render_timer(remaining: int, total_dur: int) -> str:
     }}
   }}
 
-  /* ── Chạy đếm ngược ── */
   var rem = REM;
   update(rem);
-
   var iv = setInterval(function() {{
     rem--;
     update(rem);
     if (rem <= 0) {{
       clearInterval(iv);
-      /* Tự động click nút Nộp bài sau 1.5s */
       setTimeout(function() {{
         var btn = findSubmitBtn();
-        if (btn) {{
-          btn.click();
-        }} else {{
-          /* Fallback: reload trang để Streamlit xử lý remaining==0 */
-          window.parent.location.reload();
-        }}
+        if (btn) {{ btn.click(); }}
+        else     {{ window.parent.location.reload(); }}
       }}, 1500);
     }}
   }}, 1000);
@@ -635,15 +660,7 @@ def show_select():
                 st.session_state["sel_subject"] = subj; st.rerun()
 
     subject = st.session_state["sel_subject"]
-    st.markdown("""
-    <style>
-    .sec-title {
-        color: #000 !important;
-        font-weight: 600;
-        font-size: 1rem;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+
     st.markdown('<div class="sec-title">🏫 Chọn lớp / cấp độ</div>', unsafe_allow_html=True)
     if "sel_grade" not in st.session_state:
         st.session_state["sel_grade"] = list(GRADE_CONFIG.keys())[0]
@@ -657,15 +674,6 @@ def show_select():
         cfg    = GRADE_CONFIG[g]
         active = st.session_state["sel_grade"] == g
         with grade_cols[i]:
-            st.markdown("""
-            <style>
-            .grade-desc {
-                color: #000 !important;
-                font-weight: 600;
-                font-size: 1rem;
-            }
-            </style>
-            """, unsafe_allow_html=True)
             st.markdown(
                 f'<div class="grade-card {"active" if active else ""}">'
                 f'<div class="grade-emoji">{cfg["emoji"]}</div>'
@@ -683,13 +691,11 @@ def show_select():
     st.markdown('<div class="sec-title">🔢 Số câu hỏi</div>', unsafe_allow_html=True)
 
     _QUICK_OPTS = [16, 20, 25, 30]
-    # Đảm bảo giá trị khởi tạo luôn >= 16
     _MIN_Q = 16
     _MAX_Q = 100
     if "sel_num_q" not in st.session_state or st.session_state["sel_num_q"] < _MIN_Q:
         st.session_state["sel_num_q"] = max(_MIN_Q, _QUICK_OPTS[0])
 
-    # Hàng chọn nhanh
     qcols = st.columns(len(_QUICK_OPTS))
     for i, n in enumerate(_QUICK_OPTS):
         with qcols[i]:
@@ -700,37 +706,8 @@ def show_select():
                 st.session_state["sel_num_q"] = n
                 st.rerun()
 
-    # Clamp giá trị hiện tại trước khi truyền vào number_input
     safe_val = max(_MIN_Q, min(_MAX_Q, int(st.session_state["sel_num_q"])))
 
-    # Nhập thủ công
-    st.markdown("""
-    <style>
-
-    /* Hoặc nhập số câu tuỳ ý:*/
-    div[data-baseweb="input"] input {
-        color: #000 !important;
-    }
-
-    /* nền ô nhập */
-    div[data-baseweb="input"] > div {
-        background-color: #ffffff !important;
-    }
-
-    /* viền ô nhập */
-    div[data-baseweb="input"] > div {
-        border: 1px solid #4338ca !important;
-        border-radius: 8px;
-    }
-
-    /* label */
-    label {
-        color: #000 !important;
-        font-weight: 600;
-    }
-
-    </style>
-    """, unsafe_allow_html=True)
     custom = st.number_input(
         "Hoặc nhập số câu tuỳ ý:",
         min_value=_MIN_Q, max_value=_MAX_Q,
@@ -738,15 +715,14 @@ def show_select():
         step=1, key="nq_custom",
         help=f"Tối thiểu {_MIN_Q} câu, tối đa {_MAX_Q} câu"
     )
-    # Đồng bộ giá trị nhập thủ công vào session
     if int(custom) != st.session_state["sel_num_q"]:
         st.session_state["sel_num_q"] = int(custom)
 
     num_q = st.session_state["sel_num_q"]
 
+    # Ô tóm tắt — dùng class mới
     st.markdown(f"""
-    <div style="background:#f0f4ff;border:1px solid #c5d8fc;border-radius:10px;
-                padding:.75rem 1rem;margin:.75rem 0;font-size:.85rem">
+    <div class="exam-summary">
         💡 <b>{subject}</b> · {grade} · <b>{num_q} câu</b> ·
         ⏱️ {cfg['time']} phút · {cfg['desc']}
     </div>""", unsafe_allow_html=True)
@@ -791,9 +767,8 @@ def show_exam():
     st.markdown(_PAGE_CSS, unsafe_allow_html=True)
     qs  = st.session_state.questions
     cfg = GRADE_CONFIG.get(st.session_state.grade, {})
-    dur = cfg.get("time", 20) * 60          # tổng giây
+    dur = cfg.get("time", 20) * 60
 
-    # ── Tính thời gian ───────────────────────────────────
     elapsed   = time.time() - st.session_state.start_time
     remaining = max(0, dur - int(elapsed))
     mins, secs = divmod(remaining, 60)
@@ -803,7 +778,6 @@ def show_exam():
                   if st.session_state.answers.get(i) is None]
     pct_done   = int(answered / len(qs) * 100) if qs else 0
 
-    # ── Tự động nộp bài khi hết giờ ─────────────────────
     if remaining == 0 and not st.session_state.submitted:
         st.markdown("""
         <div class="timer-toast danger" style="font-size:.9rem;padding:.8rem 1.2rem">
@@ -811,7 +785,6 @@ def show_exam():
         </div>""", unsafe_allow_html=True)
         _submit(); return
 
-    # ── Header: tên đề + timer ───────────────────────────
     col_title, col_timer = st.columns([3, 1])
     with col_title:
         src       = st.session_state.exam_source
@@ -828,10 +801,8 @@ def show_exam():
             f'</div></div>',
             unsafe_allow_html=True)
     with col_timer:
-        # Dùng components.html để JS chạy được trong Streamlit
         components.html(_render_timer(remaining, dur), height=110, scrolling=False)
 
-    # ── Progress bar ─────────────────────────────────────
     st.markdown(f"""
     <div class="prog-wrap">
         <div class="prog-bar-bg">
@@ -840,7 +811,6 @@ def show_exam():
         <div class="prog-text">{answered}/{len(qs)} câu · {pct_done}%</div>
     </div>""", unsafe_allow_html=True)
 
-    # ── Banner xác nhận nộp ──────────────────────────────
     if st.session_state.get("confirm_submit") and unanswered:
         st.markdown(
             f'<div class="confirm-banner">⚠️ Còn <b>{len(unanswered)} câu chưa làm</b>: '
@@ -848,7 +818,6 @@ def show_exam():
             + " — Cuộn xuống hoàn thành hoặc nộp luôn.</div>",
             unsafe_allow_html=True)
 
-    # ── Danh sách câu hỏi ────────────────────────────────
     for i, q in enumerate(qs):
         is_unanswered = (st.session_state.get("confirm_submit") and i in unanswered)
         is_answered   = st.session_state.answers.get(i) is not None
@@ -875,7 +844,6 @@ def show_exam():
 
         st.markdown('</div></div>', unsafe_allow_html=True)
 
-    # ── Nút nộp bài ──────────────────────────────────────
     st.markdown("---")
     c1, c2 = st.columns(2)
     with c1:
@@ -974,9 +942,9 @@ def show_results():
         u, c = ans.get(i), q["answer"]
         skp  = u is None
         ok   = (not skp and u == c)
-        if ok:   card_cls, icon = "correct", "✅"
+        if ok:    card_cls, icon = "correct", "✅"
         elif skp: card_cls, icon = "skipped", "⬜"
-        else:    card_cls, icon = "wrong",   "❌"
+        else:     card_cls, icon = "wrong",   "❌"
 
         with st.expander(
             f"{icon} Câu {i+1}: {q['question'][:65]}{'...' if len(q['question'])>65 else ''}",
@@ -996,31 +964,15 @@ def show_results():
                 st.markdown(
                     f'<div style="color:#1e8e3e;font-weight:600">'
                     f'✅ Đáp án đúng: {c}</div>',
-                    unsafe_allow_html=True
-                )
+                    unsafe_allow_html=True)
 
-            explanation = q.get("explanation", "")
-
-            if isinstance(explanation, dict):
-                exp = "<br>".join(explanation.values())
-            else:
-                exp = str(explanation)
-
+            exp = "<br>".join(q["explanation"].values())
             st.markdown(
-                f'''
-                <div style="
-                    margin-top:.4rem;
-                    font-size:.78rem;
-                    background:#f0fdf4;
-                    padding:.4rem .6rem;
-                    border-radius:6px;
-                    color:#000;
-                ">
-                    💡 {exp}
-                </div>
-                ''',
-                unsafe_allow_html=True
-            )
+                f'''<div style="margin-top:.4rem;font-size:.78rem;background:#f0fdf4;
+                    padding:.4rem .6rem;border-radius:6px;color:#000;">
+                    💡 {exp}</div>''',
+                unsafe_allow_html=True)
+
     st.markdown("---")
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -1115,4 +1067,3 @@ def show_history():
     st.markdown("---")
     if st.button("← Về trang chủ", use_container_width=True):
         st.session_state.page = "home"; st.rerun()
-
