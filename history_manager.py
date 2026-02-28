@@ -1,154 +1,228 @@
 # ============================================================
-# history_manager.py — Chống trùng câu hỏi toàn diện
-# Lưu vào Firestore (persist qua reload) + fallback JSON local
-# Hash câu GỐC từ bank trước khi Groq paraphrase
+# history_manager.py — Stable Production Version
+# Lưu lịch sử câu hỏi bằng:
+# 1. Firestore (nếu có)
+# 2. Local JSON (backup)
 # ============================================================
-import json, os, hashlib, threading
+
+import os
+import json
+import hashlib
+import threading
 from datetime import datetime
+from typing import List, Dict, Set
 
-HISTORY_FILE = "exam_history.json"
-MAX_HISTORY  = 500
+# ================= CONFIG =================
+MAX_HISTORY = 500
+LOCAL_FILE = "exam_history.json"
 
-_file_lock = threading.Lock()   # chống race condition khi ghi file JSON
+_lock = threading.Lock()
+
+# ================= FIRESTORE INIT =================
+try:
+    from firebase_manager import _db, _FIREBASE_OK
+except Exception as e:
+    print("[Firebase Import Error]:", e)
+    _db = None
+    _FIREBASE_OK = False
 
 
-# ── Hash câu hỏi gốc ─────────────────────────────────────
+# ============================================================
+# HASH QUESTION (An toàn tuyệt đối)
+# ============================================================
 def _hash_question(question_text: str) -> str:
-    text = question_text.strip().lower().rstrip(".?!")
+    if not question_text:
+        return ""
+
+    text = str(question_text).strip().lower().rstrip(".?!")
     text = " ".join(text.split())
-    return hashlib.md5(text.encode("utf-8")).hexdigest()[:16]
+
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:24]
 
 
-# ── Firestore backend ─────────────────────────────────────
-def _firestore_get(subject: str, grade: str) -> set:
-    try:
-        from firebase_manager import _db, _FIREBASE_OK
-        if not _FIREBASE_OK or not _db:
-            return set()
-        key = f"{subject}|{grade}"
-        doc = _db.collection("exam_history").document(
-            key.replace("/", "_").replace(" ", "_")
-        ).get()
-        if doc.exists:
-            return set(doc.to_dict().get("hashes", []))
-    except Exception:
-        pass
-    return set()
-
-
-def _firestore_save(subject: str, grade: str, hashes: list):
-    try:
-        from firebase_manager import _db, _FIREBASE_OK
-        if not _FIREBASE_OK or not _db:
-            return
-        key = f"{subject}|{grade}"
-        _db.collection("exam_history").document(
-            key.replace("/", "_").replace(" ", "_")
-        ).set({
-            "hashes":       hashes,
-            "last_updated": datetime.now().isoformat(),
-        })
-    except Exception:
-        pass
-
-
-# ── Local JSON fallback (thread-safe) ────────────────────
+# ============================================================
+# LOCAL STORAGE
+# ============================================================
 def _local_load() -> dict:
-    with _file_lock:
-        if os.path.exists(HISTORY_FILE):
-            try:
-                with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except Exception:
-                pass
-    return {}
+    if not os.path.exists(LOCAL_FILE):
+        return {}
+
+    try:
+        with open(LOCAL_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print("[Local Load Error]:", e)
+        return {}
 
 
 def _local_save(data: dict):
-    with _file_lock:
-        try:
-            with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-        except Exception as e:
-            print(f"[history_manager] Lỗi ghi file: {e}")
-
-
-# ── API công khai ─────────────────────────────────────────
-def get_used_hashes(subject: str, grade: str) -> set:
-    fs_hashes = _firestore_get(subject, grade)
-    if fs_hashes:
-        return fs_hashes
-    data = _local_load()
-    key  = f"{subject}|{grade}"
-    return set(data.get(key, {}).get("hashes", []))
-
-
-def save_exam(subject: str, grade: str, questions: list):
-    key        = f"{subject}|{grade}"
-    new_hashes = [_hash_question(q["question"]) for q in questions]
-
-    # Cập nhật Firestore
-    existing_fs = list(_firestore_get(subject, grade))
-    combined    = list(dict.fromkeys(existing_fs + new_hashes))
-    combined    = combined[-MAX_HISTORY:]
-    _firestore_save(subject, grade, combined)
-
-    # Cập nhật local (backup) — thread-safe qua _local_save
-    data = _local_load()
-    if key not in data:
-        data[key] = {"hashes": [], "last_updated": ""}
-    existing_local = data[key]["hashes"]
-    combined_local = list(dict.fromkeys(existing_local + new_hashes))
-    data[key]["hashes"]       = combined_local[-MAX_HISTORY:]
-    data[key]["last_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M")
-    _local_save(data)
-
-
-def filter_new_questions(questions: list, used_hashes: set) -> list:
-    return [
-        q for q in questions
-        if _hash_question(q["question"]) not in used_hashes
-    ]
-
-
-def clear_history(subject: str = None, grade: str = None):
     try:
-        from firebase_manager import _db, _FIREBASE_OK
-        if _FIREBASE_OK and _db:
+        with open(LOCAL_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print("[Local Save Error]:", e)
+
+
+# ============================================================
+# GET USED HASHES
+# ============================================================
+def get_used_hashes(subject: str, grade: str) -> Set[str]:
+    key = f"{subject}_{grade}"
+    hashes = set()
+
+    # ----- Firestore -----
+    if _FIREBASE_OK and _db:
+        try:
+            doc = _db.collection("exam_history").document(key).get()
+            if doc.exists:
+                hashes.update(doc.to_dict().get("hashes", []))
+        except Exception as e:
+            print("[Firestore Read Error]:", e)
+
+    # ----- Local -----
+    data = _local_load()
+    hashes.update(data.get(key, {}).get("hashes", []))
+
+    return hashes
+
+
+# ============================================================
+# SAVE EXAM
+# ============================================================
+def save_exam(subject: str, grade: str, questions: List[Dict]):
+    key = f"{subject}_{grade}"
+
+    # ---- Tạo hash mới ----
+    new_hashes = []
+    for q in questions:
+        if not isinstance(q, dict):
+            continue
+
+        h = _hash_question(q.get("question", ""))
+        if h:
+            new_hashes.append(h)
+
+    if not new_hashes:
+        print("[Warning] No valid questions to save.")
+        return
+
+    # ============================================================
+    # FIRESTORE SAVE
+    # ============================================================
+    if _FIREBASE_OK and _db:
+        try:
+            doc_ref = _db.collection("exam_history").document(key)
+            doc = doc_ref.get()
+
+            existing = []
+            if doc.exists:
+                existing = doc.to_dict().get("hashes", [])
+
+            combined = list(dict.fromkeys(existing + new_hashes))
+            combined = combined[-MAX_HISTORY:]
+
+            doc_ref.set({
+                "hashes": combined,
+                "last_updated": datetime.now().isoformat()
+            })
+
+            print(f"[Firestore] Saved {len(new_hashes)} hashes.")
+
+        except Exception as e:
+            print("[Firestore Save Error]:", e)
+
+    # ============================================================
+    # LOCAL SAVE (Backup luôn luôn)
+    # ============================================================
+    with _lock:
+        data = _local_load()
+
+        existing_local = data.get(key, {}).get("hashes", [])
+        combined_local = list(dict.fromkeys(existing_local + new_hashes))
+        combined_local = combined_local[-MAX_HISTORY:]
+
+        data[key] = {
+            "hashes": combined_local,
+            "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M")
+        }
+
+        _local_save(data)
+
+        print(f"[Local] Saved {len(new_hashes)} hashes.")
+
+
+# ============================================================
+# FILTER NEW QUESTIONS
+# ============================================================
+def filter_new_questions(questions: List[Dict], used_hashes: Set[str]) -> List[Dict]:
+    if not questions:
+        return []
+
+    filtered = []
+
+    for q in questions:
+        if not isinstance(q, dict):
+            continue
+
+        h = _hash_question(q.get("question", ""))
+
+        if h and h not in used_hashes:
+            filtered.append(q)
+
+    return filtered
+
+
+# ============================================================
+# CLEAR HISTORY
+# ============================================================
+def clear_history(subject: str = None, grade: str = None):
+    # ---- Firestore ----
+    if _FIREBASE_OK and _db:
+        try:
             if subject and grade:
-                key = f"{subject}|{grade}".replace("/","_").replace(" ","_")
+                key = f"{subject}_{grade}"
                 _db.collection("exam_history").document(key).delete()
             else:
-                docs = _db.collection("exam_history").stream()
+                docs = list(_db.collection("exam_history").stream())
                 for doc in docs:
                     doc.reference.delete()
-    except Exception:
-        pass
 
-    data = _local_load()
-    if subject and grade:
-        data.pop(f"{subject}|{grade}", None)
-    else:
-        data = {}
-    _local_save(data)
+            print("[Firestore] History cleared.")
+        except Exception as e:
+            print("[Firestore Clear Error]:", e)
+
+    # ---- Local ----
+    with _lock:
+        data = _local_load()
+
+        if subject and grade:
+            data.pop(f"{subject}_{grade}", None)
+        else:
+            data = {}
+
+        _local_save(data)
+        print("[Local] History cleared.")
 
 
+# ============================================================
+# GET HISTORY STATS
+# ============================================================
 def get_history_stats() -> dict:
     stats = {}
-    try:
-        from firebase_manager import _db, _FIREBASE_OK
-        if _FIREBASE_OK and _db:
+
+    # Firestore
+    if _FIREBASE_OK and _db:
+        try:
             docs = _db.collection("exam_history").stream()
             for doc in docs:
-                d = doc.to_dict()
-                stats[doc.id.replace("_", " ", 1)] = len(d.get("hashes", []))
-            if stats:
-                return stats
-    except Exception:
-        pass
+                count = len(doc.to_dict().get("hashes", []))
+                stats[doc.id.replace("_", " ")] = count
+        except Exception as e:
+            print("[Firestore Stats Error]:", e)
 
+    # Local fallback
     data = _local_load()
-    return {
-        key: len(val.get("hashes", []))
-        for key, val in data.items()
-    }
+    for k, v in data.items():
+        stats[k.replace("_", " ")] = len(v.get("hashes", []))
+
+    return stats
