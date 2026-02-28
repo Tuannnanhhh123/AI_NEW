@@ -67,7 +67,7 @@ _CSS = """
 .li-icon  { font-size:1.1rem; flex-shrink:0; }
 .li-title { flex:1; font-size:.85rem; font-weight:600; color:#1e1b4b; }
 .li-meta  { font-size:.72rem; color:#9ca3af; white-space:nowrap; }
-.li-badge { font-size:.65rem; font-weight:700; padding:.15rem .45rem;
+.li-badge { font-size:.75rem; font-weight:715; padding:.15rem .45rem;
             border-radius:999px; }
 
 /* Chapter header */
@@ -93,9 +93,9 @@ _CSS = """
 .quiz-wrap {
     background:linear-gradient(135deg,#f0f4ff,#faf5ff);
     border:1px solid #e0e7ff; border-radius:14px;
-    padding:1rem 1.4rem; margin-top:1.2rem;
+    padding:1rem 1.2rem; margin-top:1.0rem;
 }
-.quiz-title { font-size:.95rem; font-weight:815; color:#4338ca; margin-bottom:.75rem; }
+.quiz-title { font-size:.85rem; font-weight:800; color:#4338ca; margin-bottom:.75rem; }
 
 /* Certificate */
 .cert-card {
