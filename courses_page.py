@@ -333,6 +333,15 @@ def _show_course_detail(uid: str, uname: str):
     for ci, ch in enumerate(course.get("chapters", [])):
         lessons = ch.get("lessons", [])
         ch_done = sum(1 for ls in lessons if ls["id"] in done)
+        st.markdown("""
+        <style>
+        .ch-count {
+            color: #000 !important;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        </style>
+        """, unsafe_allow_html=True)
         st.markdown(f"""
         <div class="ch-header">
           <span class="ch-num">Ch.{ci+1}</span>
