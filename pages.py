@@ -984,7 +984,7 @@ def show_results():
             st.markdown(f'<div class="res-card {card_cls}">', unsafe_allow_html=True)
             st.markdown(f'<div class="res-q">{q["question"]}</div>', unsafe_allow_html=True)
             if skp:
-                st.markdown('<div class="res-ans" style="color:#888">— Chưa trả lời</div>',
+                st.markdown('<div class="res-ans" style="color:#000">— Chưa trả lời</div>',
                             unsafe_allow_html=True)
             else:
                 color = "#1e8e3e" if ok else "#d93025"
@@ -1000,7 +1000,10 @@ def show_results():
                 f'background:#f0fdf4;padding:.4rem .6rem;border-radius:6px">'
                 f'💡 {q["explanation"]}</div>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
-
+            st.markdown(
+                f'<div class="explanation-box"><span style="color:#000;">💡 {exp}</span></div>',
+                unsafe_allow_html=True
+            )
     st.markdown("---")
     c1, c2, c3 = st.columns(3)
     with c1:
