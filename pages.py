@@ -624,6 +624,14 @@ def show_home():
                 }
                 </style>
                 """, unsafe_allow_html=True)
+            st.markdown("""
+                            <style>
+                            .stat-card-lbl {
+                                color: #000 !important;
+                                style="font-size:18px;"
+                            }
+                            </style>
+                            """, unsafe_allow_html=True)
             st.markdown(f"""
             <div class="stat-card">
                 <div class="stat-card-val" style="color:{color}">{s['avg']}%</div>
