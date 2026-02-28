@@ -704,6 +704,12 @@ def show_select():
     safe_val = max(_MIN_Q, min(_MAX_Q, int(st.session_state["sel_num_q"])))
 
     # Nhập thủ công
+    st.markdown("""
+    <style>
+    /* Hoặc nhập số câu tuỳ ý: */
+    div[data-baseweb="input"] input {
+        color: #000 !important;
+    }</style>""",unsafe_allow_html=True)
     custom = st.number_input(
         "Hoặc nhập số câu tuỳ ý:",
         min_value=_MIN_Q, max_value=_MAX_Q,
