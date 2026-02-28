@@ -649,6 +649,15 @@ def show_select():
         cfg    = GRADE_CONFIG[g]
         active = st.session_state["sel_grade"] == g
         with grade_cols[i]:
+            st.markdown("""
+            <style>
+            .grade-desc {
+                color: #000 !important;
+                font-weight: 600;
+                font-size: 1rem;
+            }
+            </style>
+            """, unsafe_allow_html=True)
             st.markdown(
                 f'<div class="grade-card {"active" if active else ""}">'
                 f'<div class="grade-emoji">{cfg["emoji"]}</div>'
