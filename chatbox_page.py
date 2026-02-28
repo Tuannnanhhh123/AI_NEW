@@ -100,7 +100,7 @@ _CHAT_CSS = """
 .new-conv-btn {
     display: inline-flex; align-items: center; gap: .35rem;
     background: linear-gradient(135deg,#1a73e8,#1557b0);
-    color: white; border: none; border-radius: 8px;
+    color: black; border: none; border-radius: 8px;
     padding: .4rem .85rem; font-size: .8rem; font-weight: 600;
     cursor: pointer; white-space: nowrap; flex-shrink: 0;
 }
