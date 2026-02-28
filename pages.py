@@ -991,7 +991,7 @@ def show_results():
                 st.markdown(
                     f'<div class="res-ans" style="color:{color};font-weight:600">'
                     f'Bạn chọn: {u}</div>', unsafe_allow_html=True)
-            
+
             if not ok:
                 st.markdown(
                     f'<div style="color:#1e8e3e;font-weight:600">'
