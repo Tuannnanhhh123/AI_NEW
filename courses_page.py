@@ -217,7 +217,7 @@ def _show_course_list(uid: str):
               <div class="cc-title">{c["title"]}</div>
               <div class="cc-meta">
                 <span style="color:#000;!important">👨‍🏫 {c.get("teacher","")}</span>
-                <span style="color:#000; important" >📖 {tot} bài học</span>
+                <span style="color:#000; !important" >📖 {tot} bài học</span>
                 <span style="color:#000; !important">🏫 {c.get("grade","")}</span>
               </div>
             </div>
