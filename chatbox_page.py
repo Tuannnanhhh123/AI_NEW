@@ -305,7 +305,7 @@ def _render_messages(messages: list):
         st.markdown("""
         <div class="empty-state">
             <div class="icon">💬</div>
-            <p>Xin chào! Tôi có thể giúp gì cho bạn?<br>
+            <p style="font-size:.78rem;color:#000">Xin chào! Tôi có thể giúp gì cho bạn?<br>
             <span style="font-size:.78rem;color:#000">Chọn gợi ý hoặc gõ câu hỏi bên dưới.</span></p>
         </div>""", unsafe_allow_html=True)
         return
