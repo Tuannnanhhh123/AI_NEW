@@ -197,8 +197,16 @@ def _show_course_list(uid: str):
     if not filtered:
         st.info("Chưa có khóa học nào. Hãy chờ giáo viên thêm nội dung!")
         return
-
-    st.markdown(f'<div class="sec-t" style ="color:#000 !important;">{len(filtered)} khóa học</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <style>
+    .sec-t {
+        color: #000 !important;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    st.markdown(f'<div class="sec-t" >{len(filtered)} khóa học</div>', unsafe_allow_html=True)
 
     for c in filtered:
         prog = get_progress(uid, c["id"])
