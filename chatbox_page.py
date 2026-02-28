@@ -306,7 +306,7 @@ def _render_messages(messages: list):
         <div class="empty-state">
             <div class="icon">💬</div>
             <p>Xin chào! Tôi có thể giúp gì cho bạn?<br>
-            <span style="font-size:.78rem;color:#bbb">Chọn gợi ý hoặc gõ câu hỏi bên dưới.</span></p>
+            <span style="font-size:.78rem;color:#000">Chọn gợi ý hoặc gõ câu hỏi bên dưới.</span></p>
         </div>""", unsafe_allow_html=True)
         return
 
