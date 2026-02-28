@@ -28,422 +28,275 @@ _QUICK_QUESTIONS = [
     ("🎲", "Cách tính xác suất lớp 12"),
 ]
 
-_CHAT_CSS = """
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preview – Chat AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* ── Layout wrapper ── */
-.chat-layout {
-    display: flex;
-    gap: 1rem;
-    height: calc(100vh - 140px);
-    min-height: 500px;
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Be Vietnam Pro', sans-serif; background: #dde6f5; padding: 1.5rem; }
+
+.wrapper {
+  max-width: 860px; margin: 0 auto;
+  display: flex; gap: 1rem; height: 580px;
 }
 
-/* ── Sidebar trái ── */
-.conv-sidebar {
-    width: 230px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    background: #f8faff;
-    border: 1px solid #e0e7ff;
-    border-radius: 12px;
-    padding: .75rem;
-    overflow: hidden;
+/* ── Sidebar ── */
+.sidebar {
+  width: 200px; flex-shrink: 0;
+  background: #eef3fd;
+  border: 1px solid #93c5fd;
+  border-radius: 12px; padding: .75rem;
+  display: flex; flex-direction: column; gap: .4rem;
 }
-.conv-sidebar-label {
-    font-size: .68rem; font-weight: 700; color: #94a3b8;
-    letter-spacing: .08em; text-transform: uppercase;
-    margin: .5rem 0 .4rem;
+.sidebar-label {
+  font-size: .65rem; font-weight: 700; color: #1557b0;
+  letter-spacing: .08em; text-transform: uppercase; margin-bottom: .3rem;
 }
-.conv-list { flex: 1; overflow-y: auto; }
-.conv-row {
-    display: flex; align-items: center; gap: .3rem;
-    margin-bottom: 3px;
-}
-.conv-btn-active {
-    flex: 1; background: #e8f0fe; border: 1px solid #c5d8fc;
-    border-radius: 7px; padding: .4rem .6rem; cursor: pointer;
-    font-size: .8rem; font-weight: 600; color: #1a73e8;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    text-align: left;
+.conv-item {
+  display: flex; align-items: center; gap: .3rem; margin-bottom: 3px;
 }
 .conv-btn {
-    flex: 1; background: transparent; border: 1px solid transparent;
-    border-radius: 7px; padding: .4rem .6rem; cursor: pointer;
-    font-size: .8rem; color: #444;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    text-align: left;
+  flex: 1; padding: .38rem .6rem; border-radius: 7px;
+  font-size: .78rem; font-weight: 600; cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  text-align: left; transition: all .15s; font-family: inherit;
 }
-.conv-btn:hover { background: #f0f4ff; }
-.conv-time { font-size: .68rem; color: #bbb; padding: 0 .3rem .2rem; }
+.conv-btn.active {
+  background: #1557b0; border: 1px solid #0d47a1; color: white;
+}
+.conv-btn.inactive {
+  background: white; border: 1px solid #93c5fd; color: #1557b0;
+}
+.conv-btn.inactive:hover { background: #1557b0; color: white; border-color: #1557b0; }
+.del-btn {
+  width: 22px; height: 22px; border-radius: 5px;
+  background: white; border: 1px solid #fca5a5;
+  color: #d93025; font-size: .7rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.conv-time { font-size: .62rem; color: #7ba7d4; padding: 0 .2rem .3rem; }
 
 /* ── Chat area ── */
 .chat-area {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #e0e7ff;
-    border-radius: 12px;
-    overflow: hidden;
-    background: #fff;
-}
-.chat-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: .75rem 1rem;
-    border-bottom: 1px solid #eef1fb;
-    background: #fff;
-    flex-shrink: 0;
-}
-.chat-header-title { font-weight: 700; font-size: .95rem; color: #1a1a2e;
-                     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; }
-.chat-header-meta  { font-size: .7rem; color: #94a3b8; margin-top: 1px; }
-.new-conv-btn {
-    display: inline-flex; align-items: center; gap: .35rem;
-    background: linear-gradient(135deg,#1a73e8,#1557b0);
-    color: black; border: none; border-radius: 8px;
-    padding: .4rem .85rem; font-size: .8rem; font-weight: 600;
-    cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  flex: 1; display: flex; flex-direction: column;
+  border: 1px solid #93c5fd; border-radius: 12px;
+  overflow: hidden; background: #f4f8ff;
 }
 
-/* ── Messages ── */
-.chat-messages {
-    flex: 1; overflow-y: auto;
-    padding: 1rem;
-    display: flex; flex-direction: column; gap: .4rem;
+/* Header */
+.chat-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .65rem 1rem; border-bottom: 1px solid #dbeafe;
+  background: #eef3fd; flex-shrink: 0;
 }
-.bubble-wrap-user { display:flex; justify-content:flex-end; }
-.bubble-wrap-ai   { display:flex; justify-content:flex-start; align-items:flex-end; gap:.4rem; }
+.chat-title { font-weight: 700; font-size: .9rem; color: #0d47a1; }
+.chat-meta  { font-size: .65rem; color: #1557b0; margin-top: 1px; }
+
+/* Messages */
+.messages {
+  flex: 1; overflow-y: auto; padding: 1rem;
+  display: flex; flex-direction: column; gap: .5rem;
+  background: #f4f8ff;
+}
+
+/* Bubble user — xanh đậm */
+.bubble-user-wrap { display: flex; justify-content: flex-end; }
 .bubble-user {
-    background: linear-gradient(135deg,#1a73e8,#1557b0);
-    color: white; padding: .55rem .9rem;
-    border-radius: 16px 16px 4px 16px;
-    max-width: 70%; font-size: .85rem; line-height: 1.5;
-    word-break: break-word;
-    box-shadow: 0 2px 8px rgba(26,115,232,.2);
+  background: linear-gradient(135deg, #1557b0, #0d47a1);
+  color: white; padding: .55rem .9rem;
+  border-radius: 16px 16px 4px 16px;
+  max-width: 68%; font-size: .82rem; line-height: 1.5;
+  box-shadow: 0 3px 12px rgba(13,71,161,.35);
+}
+
+/* Bubble AI */
+.bubble-ai-wrap { display: flex; align-items: flex-end; gap: .4rem; }
+.ai-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, #1557b0, #7c3aed);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .75rem; flex-shrink: 0;
 }
 .bubble-ai {
-    background: #f4f6ff; color: #1a1a2e;
-    padding: .45rem .8rem;
-    border-radius: 16px 16px 16px 4px;
-    max-width: 70%; font-size: .82rem; line-height: 1.55;
-    word-break: break-word;
-    border: 1px solid #e0e7ff;
-    box-shadow: 0 1px 4px rgba(0,0,0,.05);
-}
-.ai-avatar {
-    width: 26px; height: 26px; border-radius: 50%;
-    background: linear-gradient(135deg,#1a73e8,#7c3aed);
-    display: flex; align-items: center; justify-content: center;
-    font-size: .75rem; flex-shrink: 0;
+  background: white; color: #1a1a2e;
+  padding: .45rem .8rem;
+  border-radius: 16px 16px 16px 4px;
+  max-width: 68%; font-size: .8rem; line-height: 1.55;
+  border: 1px solid #dbeafe;
+  box-shadow: 0 1px 4px rgba(13,71,161,.08);
 }
 
-/* ── Quick chips ── */
-.chips-section { padding: .75rem 1rem; border-bottom: 1px solid #eef1fb; }
-.chips-label { font-size: .68rem; font-weight: 700; color: #94a3b8;
-               letter-spacing: .08em; text-transform: uppercase; margin-bottom: .4rem; }
-.chip-grid { display: flex; flex-wrap: wrap; gap: .4rem; }
+/* Quick chips */
+.chips-wrap {
+  padding: .6rem 1rem; border-bottom: 1px solid #dbeafe;
+  background: #f4f8ff;
+}
+.chips-label {
+  font-size: .62rem; font-weight: 700; color: #1557b0;
+  letter-spacing: .08em; text-transform: uppercase; margin-bottom: .4rem;
+}
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; }
 .chip {
-    display: inline-flex; align-items: center; gap: .3rem;
-    background: #f0f4ff; border: 1px solid #c5d8fc;
-    border-radius: 20px; padding: .28rem .7rem;
-    font-size: .75rem; color: #1a73e8; cursor: pointer;
-    font-weight: 500; white-space: nowrap;
-    transition: all .15s;
+  display: inline-flex; align-items: center; gap: .3rem;
+  background: white; border: 2px solid #1557b0;
+  border-radius: 20px; padding: .25rem .65rem;
+  font-size: .72rem; color: #1557b0; cursor: pointer;
+  font-weight: 600; white-space: nowrap; transition: all .15s;
+  font-family: inherit;
 }
-.chip:hover { background: #1a73e8; color: white; border-color: #1a73e8; }
-
-/* ── Input area ── */
-.chat-input-area {
-    padding: .6rem 1rem;
-    border-top: 1px solid #eef1fb;
-    background: #fff;
-    flex-shrink: 0;
-}
-.input-hint { font-size: .68rem; color: #bbb; text-align: right; margin-top: .2rem; }
-
-/* ── Empty state ── */
-.empty-state { text-align:center; padding: 3rem 1rem; color: #bbb; }
-.empty-state .icon { font-size: 2.5rem; margin-bottom: .5rem; }
-.empty-state p { font-size: .85rem; line-height: 1.6; }
-
-/* ── Nút mới cố định góc phải ── */
-.fab-new-conv {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    z-index: 9999;
-    background: linear-gradient(135deg, #1a73e8, #1557b0);
-    color: white;
-    border: none;
-    border-radius: 50px;
-    padding: .65rem 1.2rem;
-    font-size: .85rem;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 4px 16px rgba(26,115,232,.4);
-    display: inline-flex;
-    align-items: center;
-    gap: .4rem;
-    white-space: nowrap;
-    transition: transform .15s, box-shadow .15s;
-}
-.fab-new-conv:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(26,115,232,.5);
+.chip:hover {
+  background: linear-gradient(135deg, #1557b0, #0d47a1);
+  color: white; border-color: #0d47a1;
+  box-shadow: 0 3px 8px rgba(13,71,161,.25);
 }
 
-/* ── Nav buttons ── */
-.nav-row { display:flex; gap:.5rem; padding: .5rem 1rem;
-           border-top: 1px solid #eef1fb; background:#fff; flex-shrink:0; }
+/* Input */
+.input-wrap {
+  padding: .6rem 1rem; border-top: 1px solid #dbeafe;
+  background: #eef3fd; display: flex; gap: .5rem; flex-shrink: 0;
+}
+.input-box {
+  flex: 1; border: 1px solid #93c5fd; border-radius: 8px;
+  padding: .4rem .75rem; font-size: .82rem;
+  font-family: inherit; outline: none; background: white; color: #1a1a2e;
+}
+.input-box:focus { border-color: #1557b0; box-shadow: 0 0 0 3px rgba(13,71,161,.1); }
+.send-btn {
+  background: linear-gradient(135deg, #1557b0, #0d47a1);
+  color: white; border: none; border-radius: 8px;
+  padding: .4rem .9rem; font-size: .8rem; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: all .2s;
+  white-space: nowrap;
+}
+.send-btn:hover { background: linear-gradient(135deg, #0d47a1, #0a3880); transform: translateY(-1px); }
+
+/* hint */
+.hint { font-size: .62rem; color: #1557b0; text-align: right; padding: .2rem 1rem .4rem; background: #eef3fd; }
+
+/* nav */
+.nav-row {
+  display: flex; gap: .5rem; padding: .5rem 1rem;
+  border-top: 1px solid #dbeafe; background: #eef3fd; flex-shrink: 0;
+}
+.nav-btn {
+  flex: 1; padding: .38rem; border-radius: 8px;
+  font-size: .78rem; font-weight: 600; cursor: pointer;
+  font-family: inherit; transition: all .2s;
+}
+.nav-btn.secondary {
+  background: white; border: 2px solid #1557b0; color: #1557b0;
+}
+.nav-btn.secondary:hover {
+  background: linear-gradient(135deg, #1557b0, #0d47a1);
+  color: white; border-color: #0d47a1;
+}
+.nav-btn.primary {
+  background: linear-gradient(135deg, #1557b0, #0d47a1);
+  border: none; color: white;
+  box-shadow: 0 3px 10px rgba(13,71,161,.3);
+}
+.nav-btn.primary:hover { background: linear-gradient(135deg, #0d47a1, #0a3880); }
 </style>
-"""
+</head>
+<body>
 
+<div class="wrapper">
 
-# ── Helpers ───────────────────────────────────────────────
-def _init_state():
-    if "conversations" not in st.session_state:
-        st.session_state["conversations"] = []
-    if "current_conv_id" not in st.session_state:
-        st.session_state["current_conv_id"] = None
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-label">💬 Hội thoại</div>
 
+    <div class="conv-item">
+      <button class="conv-btn active">▸ Giải đạo hàm lớp 12</button>
+      <button class="del-btn">✕</button>
+    </div>
+    <div class="conv-time">14:32 · 01/03</div>
 
-def _new_conversation() -> str:
-    conv_id = f"conv_{int(time.time()*1000)}"
-    st.session_state["conversations"].append({
-        "id":         conv_id,
-        "title":      "Cuộc trò chuyện mới",
-        "messages":   [],
-        "created_at": time.strftime("%H:%M · %d/%m"),
-    })
-    st.session_state["current_conv_id"] = conv_id
-    return conv_id
+    <div class="conv-item">
+      <button class="conv-btn inactive">Cách dùng web</button>
+      <button class="del-btn">✕</button>
+    </div>
+    <div class="conv-time">09:15 · 28/02</div>
 
+    <div class="conv-item">
+      <button class="conv-btn inactive">Phân biệt axit bazơ</button>
+      <button class="del-btn">✕</button>
+    </div>
+    <div class="conv-time">21:40 · 27/02</div>
+  </div>
 
-def _get_current_conv() -> dict | None:
-    cid = st.session_state.get("current_conv_id")
-    for c in st.session_state.get("conversations", []):
-        if c["id"] == cid:
-            return c
-    return None
+  <!-- Chat area -->
+  <div class="chat-area">
 
+    <!-- Header -->
+    <div class="chat-header">
+      <div>
+        <div class="chat-title">Giải đạo hàm lớp 12</div>
+        <div class="chat-meta">🤖 llama-3.3-70b-versatile &nbsp;· 2 lượt</div>
+      </div>
+    </div>
 
-def _update_title(conv: dict, first_msg: str):
-    title = first_msg.strip()[:38]
-    if len(first_msg.strip()) > 38:
-        title += "…"
-    conv["title"] = title
+    <!-- Quick chips -->
+    <div class="chips-wrap">
+      <div class="chips-label">💡 Gợi ý</div>
+      <div class="chips">
+        <button class="chip">🌐 Cách sử dụng web này?</button>
+        <button class="chip">📊 Xem lịch sử bài thi ở đâu?</button>
+        <button class="chip">📐 Giải thích công thức đạo hàm</button>
+        <button class="chip">⚗️ Phân biệt axit và bazơ</button>
+        <button class="chip">🇬🇧 Thì hiện tại hoàn thành</button>
+        <button class="chip">🎲 Cách tính xác suất lớp 12</button>
+      </div>
+    </div>
 
+    <!-- Messages -->
+    <div class="messages">
+      <div class="bubble-ai-wrap">
+        <div class="ai-avatar">🤖</div>
+        <div class="bubble-ai">Xin chào! Tôi có thể giúp gì cho bạn hôm nay? 😊</div>
+      </div>
 
-def _delete_conversation(conv_id: str):
-    convs = st.session_state.get("conversations", [])
-    st.session_state["conversations"] = [c for c in convs if c["id"] != conv_id]
-    if st.session_state.get("current_conv_id") == conv_id:
-        remaining = st.session_state["conversations"]
-        st.session_state["current_conv_id"] = remaining[0]["id"] if remaining else None
+      <div class="bubble-user-wrap">
+        <div class="bubble-user">Giải thích công thức đạo hàm của hàm hợp cho mình với</div>
+      </div>
 
+      <div class="bubble-ai-wrap">
+        <div class="ai-avatar">🤖</div>
+        <div class="bubble-ai">
+          Đạo hàm của hàm hợp <b>y = f(g(x))</b> được tính theo quy tắc:<br><br>
+          <b>y' = f'(g(x)) · g'(x)</b><br><br>
+          Nói đơn giản: đạo hàm ngoài × đạo hàm trong. Bạn muốn mình giải ví dụ cụ thể không?
+        </div>
+      </div>
 
-# ── Groq ─────────────────────────────────────────────────
-def _call_groq(messages: list) -> str:
-    context = ""
-    if st.session_state.get("questions") and st.session_state.get("page") == "exam":
-        qs = st.session_state.questions
-        context = "\n\n[Học sinh đang làm bài thi]\n"
-        for i, q in enumerate(qs[:3]):
-            context += f"Câu {i+1}: {q['question']}\n"
+      <div class="bubble-user-wrap">
+        <div class="bubble-user">Ví dụ y = sin(x²) thì tính như thế nào?</div>
+      </div>
+    </div>
 
-    payload = {
-        "model":       GROQ_MODEL,
-        "messages":    [{"role": "system", "content": _SYSTEM_PROMPT + context}]
-                       + messages[-10:],
-        "max_tokens":  1000,
-        "temperature": 0.7,
-    }
-    try:
-        resp = requests.post(GROQ_API_URL, headers=GROQ_HEADERS,
-                             json=payload, timeout=30)
-        if resp.status_code == 429:
-            return "⏳ Groq đang bận, vui lòng thử lại sau vài giây!"
-        if resp.status_code != 200:
-            return f"❌ Lỗi kết nối: HTTP {resp.status_code}"
-        return resp.json()["choices"][0]["message"]["content"].strip()
-    except Exception as e:
-        return f"❌ Lỗi: {e}"
+    <!-- Input -->
+    <div class="input-wrap">
+      <input class="input-box" type="text" placeholder="Nhập câu hỏi của bạn…">
+      <button class="send-btn">Gửi ➤</button>
+    </div>
+    <div class="hint">Nhấn Enter hoặc Gửi ➤</div>
 
+    <!-- Nav -->
+    <div class="nav-row">
+      <button class="nav-btn secondary">← Trang chủ</button>
+      <button class="nav-btn primary">🚀 Làm bài ngay</button>
+    </div>
 
-def _send_message(conv: dict, text: str):
-    text = text.strip()
-    if not text:
-        return
-    if not conv["messages"]:
-        _update_title(conv, text)
-    conv["messages"].append({"role": "user", "content": text})
-    with st.spinner("🤖 Đang trả lời…"):
-        reply = _call_groq(conv["messages"])
-    conv["messages"].append({"role": "assistant", "content": reply})
+  </div>
+</div>
 
-
-# ── Auto scroll ───────────────────────────────────────────
-def _auto_scroll():
-    st.markdown("""
-    <script>
-        (function() {
-            const els = window.parent.document.querySelectorAll('.chat-messages');
-            els.forEach(el => { el.scrollTop = el.scrollHeight; });
-            const stContainers = window.parent.document.querySelectorAll('[data-testid="stVerticalBlockBorderWrapper"]');
-            if (stContainers.length) {
-                const last = stContainers[stContainers.length - 1];
-                last.scrollTop = last.scrollHeight;
-            }
-        })();
-    </script>
-    """, unsafe_allow_html=True)
-
-
-# ── Render messages ───────────────────────────────────────
-def _render_messages(messages: list):
-    if not messages:
-        st.markdown("""
-        <div class="empty-state">
-            <div class="icon">💬</div>
-            <p style="font-size:.78rem;color:#000">Xin chào! Tôi có thể giúp gì cho bạn?<br>
-            <span style="font-size:.78rem;color:#000">Chọn gợi ý hoặc gõ câu hỏi bên dưới.</span></p>
-        </div>""", unsafe_allow_html=True)
-        return
-
-    html = ""
-    for msg in messages:
-        if msg["role"] == "user":
-            html += (f'<div class="bubble-wrap-user">'
-                     f'<div class="bubble-user">{msg["content"]}</div>'
-                     f'</div>')
-        else:
-            content = msg["content"].replace("\n", "<br>")
-            html += (f'<div class="bubble-wrap-ai">'
-                     f'<div class="ai-avatar">🤖</div>'
-                     f'<div class="bubble-ai">{content}</div>'
-                     f'</div>')
-    st.markdown(html, unsafe_allow_html=True)
-
-
-# ── Entry point ───────────────────────────────────────────
-def show_chatbox():
-    st.markdown(_CHAT_CSS, unsafe_allow_html=True)
-    _init_state()
-
-    if not st.session_state["conversations"]:
-        _new_conversation()
-    if st.session_state["current_conv_id"] is None and st.session_state["conversations"]:
-        st.session_state["current_conv_id"] = st.session_state["conversations"][0]["id"]
-
-    conv  = _get_current_conv()
-    convs = st.session_state.get("conversations", [])
-
-    # ── Nút tạo mới trong sidebar — luôn cố định, không bị scroll ──
-    with st.sidebar:
-        st.markdown("---")
-        if st.button("✏️ Hội thoại mới", use_container_width=True,
-                     type="primary", key="btn_new_sidebar"):
-            _new_conversation(); st.rerun()
-        st.caption(f"{len(convs)} hội thoại")
-
-    # ══ Layout 2 cột ════════════════════════════════════
-    col_side, col_chat = st.columns([1, 3], gap="small")
-
-    # ── Cột trái: danh sách hội thoại ───────────────────
-    with col_side:
-        st.markdown('<div class="conv-sidebar-label "style="font-size:.78rem;color:#000;">💬 Hội thoại</div>',
-                    unsafe_allow_html=True)
-
-        if not convs:
-            st.caption("Chưa có hội thoại nào.")
-        else:
-            for c in reversed(convs):
-                is_active = c["id"] == st.session_state["current_conv_id"]
-                c_col, d_col = st.columns([5, 1])
-                with c_col:
-                    label = f"{'▸ ' if is_active else ''}{c['title']}"
-                    if st.button(label, key=f"sel_{c['id']}",
-                                 use_container_width=True,
-                                 type="primary" if is_active else "secondary"):
-                        st.session_state["current_conv_id"] = c["id"]
-                        st.rerun()
-                with d_col:
-                    if st.button("✕", key=f"del_{c['id']}", help="Xóa"):
-                        _delete_conversation(c["id"]); st.rerun()
-                st.caption(c["created_at"])
-
-    # ── Cột phải: chat ───────────────────────────────────
-    with col_chat:
-        if conv is None:
-            st.info("Nhấn **✏️ Hội thoại mới** để bắt đầu.")
-            return
-
-        # Header: tiêu đề bên trái, nút mới bên phải
-        turns = len(conv["messages"]) // 2
-        h_left, h_right = st.columns([3, 1])
-        with h_left:
-            st.markdown(
-                f'<div style="padding:.25rem 0">'
-                f'<div style="font-weight:700;font-size:.95rem;color:#1a1a2e;'
-                f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
-                f'{conv["title"]}</div>'
-                f'<div style="font-size:.7rem;color:#94a3b8">🤖 {GROQ_MODEL}'
-                f'{"  · " + str(turns) + " lượt" if turns else ""}</div>'
-                f'</div>', unsafe_allow_html=True)
-        with h_right:
-            st.caption("✏️ Tạo mới\nở sidebar →")
-
-
-
-        st.markdown('<hr style="border:none;border-top:1px solid #eef1fb;margin:.4rem 0">',
-                    unsafe_allow_html=True)
-
-        # Quick questions
-        if not conv["messages"]:
-            st.markdown('<div style="font-size:.68rem;font-weight:700;color:#94a3b8;'
-                        'letter-spacing:.08em;text-transform:uppercase;margin-bottom:.4rem">'
-                        '💡 Gợi ý</div>', unsafe_allow_html=True)
-            q_cols = st.columns(3)
-            for i, (icon, q) in enumerate(_QUICK_QUESTIONS):
-                with q_cols[i % 3]:
-                    if st.button(f"{icon} {q}", key=f"quick_{i}_{conv['id']}",
-                                 use_container_width=True):
-                        _send_message(conv, q); st.rerun()
-            st.markdown('<hr style="border:none;border-top:1px solid #eef1fb;margin:.5rem 0">',
-                        unsafe_allow_html=True)
-
-        # Messages container — toàn màn hình, không có hộp
-        _render_messages(conv["messages"])
-        if conv["messages"]:
-            _auto_scroll()
-
-        # Input
-        st.markdown('<hr style="border:none;border-top:1px solid #eef1fb;margin:.4rem 0">',
-                    unsafe_allow_html=True)
-        with st.form(key=f"chat_form_{conv['id']}", clear_on_submit=True):
-            f1, f2 = st.columns([6, 1])
-            with f1:
-                user_input = st.text_input(
-                    "", placeholder="Nhập câu hỏi của bạn…",
-                    label_visibility="collapsed",
-                    key=f"inp_{conv['id']}")
-            with f2:
-                submitted = st.form_submit_button("Gửi ➤", use_container_width=True,
-                                                  type="primary")
-            if submitted and user_input.strip():
-                _send_message(conv, user_input); st.rerun()
-
-        st.markdown('<div style="font-size:.68rem;color:#000;text-align:right">Nhấn Enter hoặc Gửi ➤</div>',
-                    unsafe_allow_html=True)
-
-        # Nav buttons
-        st.markdown('<hr style="border:none;border-top:1px solid #eef1fb;margin:.5rem 0">',
-                    unsafe_allow_html=True)
-        n1, n2 = st.columns(2)
-        with n1:
-            if st.button("← Trang chủ", use_container_width=True, key="chat_home"):
-                st.session_state.page = "home"; st.rerun()
-        with n2:
-            if st.button("🚀 Làm bài ngay", use_container_width=True,
+</body>
+</html>
                          type="primary", key="chat_exam"):
                 st.session_state.page = "select"; st.rerun()
+
