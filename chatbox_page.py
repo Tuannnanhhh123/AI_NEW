@@ -433,7 +433,7 @@ def show_chatbox():
             if submitted and user_input.strip():
                 _send_message(conv, user_input); st.rerun()
 
-        st.markdown('<div style="font-size:.68rem;color:#bbb;text-align:right">Nhấn Enter hoặc Gửi ➤</div>',
+        st.markdown('<div style="font-size:.68rem;color:#000;text-align:right">Nhấn Enter hoặc Gửi ➤</div>',
                     unsafe_allow_html=True)
 
         # Nav buttons
