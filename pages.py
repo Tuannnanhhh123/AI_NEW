@@ -665,7 +665,7 @@ def show_select():
     st.markdown(
         """
         <div style="
-            color:#000;
+            color:#000 !important;
             font-weight:600;
             font-size:1.1rem;
             margin-bottom:.3rem;">
