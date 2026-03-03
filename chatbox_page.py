@@ -3,7 +3,7 @@
 # ============================================================
 import requests, time
 import streamlit as st
-from config import GROQ_API_URL, GROQ_HEADERS, GROQ_MODEL
+from config import GROQ_API_URL, GROQ_MODEL, get_groq_headers
 
 _SYSTEM_PROMPT = """Bạn là trợ lý AI thông minh hỗ trợ học sinh ôn thi tại web AI Exam Generator.
 Bạn có thể:
@@ -240,7 +240,7 @@ def _call_groq(messages: list) -> str:
         "temperature": 0.7,
     }
     try:
-        resp = requests.post(GROQ_API_URL, headers=GROQ_HEADERS,
+        resp = requests.post(GROQ_API_URL, headers=get_groq_headers(),
                              json=payload, timeout=30)
         if resp.status_code == 429:
             return "⏳ Groq đang bận, vui lòng thử lại sau vài giây!"
@@ -416,3 +416,4 @@ def show_chatbox():
             if st.button("🚀 Làm bài ngay", use_container_width=True,
                          type="primary", key="chat_exam"):
                 st.session_state.page = "select"; st.rerun()
+
